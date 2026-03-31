@@ -20,3 +20,66 @@ Tech Stack
 Frontend: HTML, CSS, JavaScript
 Backend: PHP
 Database: MySQL (Docker)
+
+eyewear-shop/
+│
+├── docker/
+│   ├── docker-compose.yml
+│   └── mysql/
+│       └── init.sql
+│
+├── backend/                 # PHP
+│   ├── config/
+│   │   └── database.php
+│   │
+│   ├── controllers/
+│   │   ├── AuthController.php
+│   │   ├── ProductController.php
+│   │   ├── OrderController.php
+│   │   └── UserController.php
+│   │
+│   ├── models/
+│   │   ├── User.php
+│   │   ├── Product.php
+│   │   ├── Order.php
+│   │   └── OrderItem.php
+│   │
+│   ├── services/            # business logic (optional nhưng nên có)
+│   │   └── OrderService.php
+│   │
+│   ├── routes/
+│   │   └── api.php
+│   │
+│   ├── middleware/
+│   │   └── AuthMiddleware.php
+│   │
+│   └── index.php           # entry point (API)
+│
+├── frontend/               # HTML/CSS/JS
+│   ├── assets/
+│   │   ├── css/
+│   │   │   └── style.css
+│   │   │
+│   │   ├── js/
+│   │   │   ├── main.js
+│   │   │   ├── api.js
+│   │   │   └── auth.js
+│   │   │
+│   │   └── images/
+│   │
+│   ├── pages/
+│   │   ├── index.html
+│   │   ├── login.html
+│   │   ├── product.html
+│   │   ├── cart.html
+│   │   └── order.html
+│   │
+│   └── components/         # dùng JS render (header, navbar)
+│       ├── header.js
+│       └── footer.js
+│
+├── public/                 # expose ra browser
+│   ├── index.html
+│   └── .htaccess
+│
+└── README.md
