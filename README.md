@@ -15,7 +15,7 @@ Gia công kính, đóng gói và vận chuyển
 
 Mục tiêu của hệ thống là nâng cao trải nghiệm mua kính bằng cách giảm phụ thuộc vào cửa hàng vật lý và cung cấp quy trình mua hàng linh hoạt, thuận tiện.
 
-Optional (nên thêm vào README)
+Optional 
 Tech Stack
 Frontend: HTML, CSS, JavaScript
 Backend: PHP

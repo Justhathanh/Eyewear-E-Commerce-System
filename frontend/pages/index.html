@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vista Optic — Kính Mắt Chất Lượng Cao</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav id="navbar">
+    <div class="nav-logo">VISTA<span>.</span>OPTIC</div>
+    <ul class="nav-links">
+      <li><a href="#">Kính mắt</a></li>
+      <li><a href="#">Kính râm</a></li>
+      <li><a href="#">Đo mắt</a></li>
+      <li><a href="#">Thương hiệu</a></li>
+      <li><a href="#">Sale</a></li>
+    </ul>
+    <div class="nav-actions">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <button class="cart-btn" id="cartBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Giỏ (<span id="cartCount">0</span>)
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-tag">Bộ sưu tập 2025</div>
+      <h1 class="hero-title">Tầm nhìn<br>tinh tế,<br><em>phong cách</em><br>vượt thời.</h1>
+      <p class="hero-desc">Kính mắt không chỉ là dụng cụ quang học — đó là ngôn ngữ phong cách. Khám phá bộ sưu tập được tuyển chọn kỹ lưỡng từ các thương hiệu hàng đầu thế giới.</p>
+      <div class="hero-cta">
+        <button class="btn-primary" onclick="scrollToSection('products')">Khám phá ngay</button>
+        <button class="btn-outline" onclick="scrollToSection('rx-section')">Đặt kính theo đơn →</button>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-visual floating">
+        <div class="eyeglass-frame">
+          <svg class="glasses-svg" viewBox="0 0 260 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#c4974a;stop-opacity:1"/>
+                <stop offset="100%" style="stop-color:#8b6f47;stop-opacity:1"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#a0c8e8;stop-opacity:0.35"/>
+                <stop offset="100%" style="stop-color:#7aa8d8;stop-opacity:0.15"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="40" x2="30" y2="50" stroke="url(#g1)" stroke-width="4" stroke-linecap="round"/>
+            <line x1="260" y1="40" x2="230" y2="50" stroke="url(#g1)" stroke-width="4" stroke-linecap="round"/>
+            <path d="M105 56 Q130 48 155 56" stroke="url(#g1)" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <rect x="18" y="28" width="88" height="60" rx="20" fill="url(#g1)" opacity="0.9"/>
+            <rect x="24" y="34" width="76" height="48" rx="16" fill="url(#g2)"/>
+            <rect x="154" y="28" width="88" height="60" rx="20" fill="url(#g1)" opacity="0.9"/>
+            <rect x="160" y="34" width="76" height="48" rx="16" fill="url(#g2)"/>
+            <circle cx="18" cy="45" r="5" fill="#8b6f47"/>
+            <circle cx="18" cy="45" r="2.5" fill="#c4974a"/>
+            <circle cx="242" cy="45" r="5" fill="#8b6f47"/>
+            <circle cx="242" cy="45" r="2.5" fill="#c4974a"/>
+            <ellipse cx="42" cy="44" rx="8" ry="5" fill="white" opacity="0.2" transform="rotate(-15 42 44)"/>
+            <ellipse cx="178" cy="44" rx="8" ry="5" fill="white" opacity="0.2" transform="rotate(-15 178 44)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="hero-badge">
+        <strong>-20%</strong>
+        Pre-order ngay
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-item">
+      <div class="stat-num" data-target="2400">0</div>
+      <div class="stat-label">Mẫu kính</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" data-target="120">0</div>
+      <div class="stat-label">Thương hiệu</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num stat-text">48h</div>
+      <div class="stat-label">Giao hàng nhanh</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" data-target="15000">0</div>
+      <div class="stat-label">Khách hàng</div>
+    </div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <section class="section" id="categories">
+    <div class="section-header">
+      <h2 class="section-title">Danh mục sản phẩm</h2>
+      <span class="section-link">Xem tất cả →</span>
+    </div>
+    <div class="cat-grid">
+      <div class="cat-card" data-category="regular">
+        <div class="cat-bg cat-bg-1">
+          <svg viewBox="0 0 200 100" width="180" height="90" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="20" width="75" height="55" rx="14" fill="none" stroke="#c4974a" stroke-width="3.5" opacity="0.9"/>
+            <rect x="115" y="20" width="75" height="55" rx="14" fill="none" stroke="#c4974a" stroke-width="3.5" opacity="0.9"/>
+            <path d="M85 43 Q100 36 115 43" stroke="#c4974a" stroke-width="3.5" fill="none"/>
+            <rect x="16" y="26" width="63" height="43" rx="10" fill="#a0c8e8" opacity="0.12"/>
+            <rect x="121" y="26" width="63" height="43" rx="10" fill="#a0c8e8" opacity="0.12"/>
+            <line x1="0" y1="35" x2="10" y2="40" stroke="#8b6f47" stroke-width="3" stroke-linecap="round"/>
+            <line x1="200" y1="35" x2="190" y2="40" stroke="#8b6f47" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="cat-info">
+          <div class="cat-name">Kính mắt thường</div>
+          <div class="cat-count">842 sản phẩm</div>
+        </div>
+      </div>
+      <div class="cat-card" data-category="sunglasses">
+        <div class="cat-bg cat-bg-2">
+          <svg viewBox="0 0 200 100" width="180" height="90" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="20" width="75" height="55" rx="28" fill="none" stroke="#e8b85c" stroke-width="3.5" opacity="0.9"/>
+            <rect x="115" y="20" width="75" height="55" rx="28" fill="none" stroke="#e8b85c" stroke-width="3.5" opacity="0.9"/>
+            <path d="M85 43 Q100 36 115 43" stroke="#e8b85c" stroke-width="3.5" fill="none"/>
+            <rect x="16" y="26" width="63" height="43" rx="24" fill="#d4943a" opacity="0.3"/>
+            <rect x="121" y="26" width="63" height="43" rx="24" fill="#d4943a" opacity="0.3"/>
+            <line x1="0" y1="35" x2="10" y2="40" stroke="#c4974a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="200" y1="35" x2="190" y2="40" stroke="#c4974a" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="cat-info">
+          <div class="cat-name">Kính râm</div>
+          <div class="cat-count">1.200 sản phẩm</div>
+        </div>
+      </div>
+      <div class="cat-card" data-category="prescription">
+        <div class="cat-bg cat-bg-3">
+          <svg viewBox="0 0 200 100" width="180" height="90" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="15" width="75" height="65" rx="8" fill="none" stroke="#7ab8e8" stroke-width="3.5" opacity="0.9"/>
+            <rect x="115" y="15" width="75" height="65" rx="8" fill="none" stroke="#7ab8e8" stroke-width="3.5" opacity="0.9"/>
+            <path d="M85 43 Q100 36 115 43" stroke="#7ab8e8" stroke-width="3.5" fill="none"/>
+            <rect x="16" y="21" width="63" height="53" rx="4" fill="#5090b8" opacity="0.2"/>
+            <rect x="121" y="21" width="63" height="53" rx="4" fill="#5090b8" opacity="0.2"/>
+            <line x1="0" y1="35" x2="10" y2="40" stroke="#5890a8" stroke-width="3" stroke-linecap="round"/>
+            <line x1="200" y1="35" x2="190" y2="40" stroke="#5890a8" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="cat-info">
+          <div class="cat-name">Kính theo đơn</div>
+          <div class="cat-count">Đặt theo đơn đo</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section class="products-section" id="products">
+    <div class="section-header">
+      <h2 class="section-title">Nổi bật tuần này</h2>
+      <span class="section-link">Xem thêm →</span>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">Tất cả</button>
+      <button class="filter-btn" data-filter="available">Có sẵn</button>
+      <button class="filter-btn" data-filter="preorder">Pre-order</button>
+    </div>
+    <div class="prod-grid" id="prodGrid">
+
+      <div class="prod-card" data-type="available">
+        <div class="prod-img">
+          <svg viewBox="0 0 160 80" width="140" height="70" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="12" width="60" height="50" rx="12" fill="none" stroke="#1a1410" stroke-width="3"/>
+            <rect x="92" y="12" width="60" height="50" rx="12" fill="none" stroke="#1a1410" stroke-width="3"/>
+            <path d="M68 34 Q80 28 92 34" stroke="#1a1410" stroke-width="2.5" fill="none"/>
+            <rect x="14" y="18" width="48" height="38" rx="8" fill="#e8e0d0" opacity="0.6"/>
+            <rect x="98" y="18" width="48" height="38" rx="8" fill="#e8e0d0" opacity="0.6"/>
+            <line x1="0" y1="26" x2="8" y2="30" stroke="#555" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="160" y1="26" x2="152" y2="30" stroke="#555" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="prod-info">
+          <div class="prod-brand">Ray-Ban</div>
+          <div class="prod-name">Clubmaster Classic</div>
+          <div class="prod-bottom">
+            <span class="prod-price">3.200.000 ₫</span>
+            <span class="prod-tag">Có sẵn</span>
+          </div>
+          <button class="add-to-cart" onclick="addToCart(this)">Thêm vào giỏ</button>
+        </div>
+      </div>
+
+      <div class="prod-card" data-type="preorder">
+        <div class="prod-img">
+          <svg viewBox="0 0 160 80" width="140" height="70" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="12" width="60" height="50" rx="25" fill="none" stroke="#c4974a" stroke-width="3"/>
+            <rect x="92" y="12" width="60" height="50" rx="25" fill="none" stroke="#c4974a" stroke-width="3"/>
+            <path d="M68 34 Q80 28 92 34" stroke="#c4974a" stroke-width="2.5" fill="none"/>
+            <rect x="14" y="18" width="48" height="38" rx="21" fill="#c4974a" opacity="0.15"/>
+            <rect x="98" y="18" width="48" height="38" rx="21" fill="#c4974a" opacity="0.15"/>
+            <line x1="0" y1="26" x2="8" y2="30" stroke="#c4974a" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="160" y1="26" x2="152" y2="30" stroke="#c4974a" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="prod-info">
+          <div class="prod-brand">Oakley</div>
+          <div class="prod-name">Frogskins Gold</div>
+          <div class="prod-bottom">
+            <span class="prod-price">4.800.000 ₫</span>
+            <span class="prod-tag pre">Pre-order</span>
+          </div>
+          <button class="add-to-cart" onclick="addToCart(this)">Đặt trước</button>
+        </div>
+      </div>
+
+      <div class="prod-card" data-type="available">
+        <div class="prod-img">
+          <svg viewBox="0 0 160 80" width="140" height="70" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="10" width="60" height="56" rx="6" fill="none" stroke="#2a4a8a" stroke-width="3"/>
+            <rect x="92" y="10" width="60" height="56" rx="6" fill="none" stroke="#2a4a8a" stroke-width="3"/>
+            <path d="M68 34 Q80 28 92 34" stroke="#2a4a8a" stroke-width="2.5" fill="none"/>
+            <rect x="14" y="16" width="48" height="44" rx="3" fill="#7090d0" opacity="0.2"/>
+            <rect x="98" y="16" width="48" height="44" rx="3" fill="#7090d0" opacity="0.2"/>
+            <line x1="0" y1="26" x2="8" y2="30" stroke="#4060a0" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="160" y1="26" x2="152" y2="30" stroke="#4060a0" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="prod-info">
+          <div class="prod-brand">Gucci</div>
+          <div class="prod-name">Square Frame Blue</div>
+          <div class="prod-bottom">
+            <span class="prod-price">6.500.000 ₫</span>
+            <span class="prod-tag">Có sẵn</span>
+          </div>
+          <button class="add-to-cart" onclick="addToCart(this)">Thêm vào giỏ</button>
+        </div>
+      </div>
+
+      <div class="prod-card" data-type="available">
+        <div class="prod-img">
+          <svg viewBox="0 0 160 80" width="140" height="70" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="38" cy="38" rx="30" ry="28" fill="none" stroke="#1a1410" stroke-width="3"/>
+            <ellipse cx="122" cy="38" rx="30" ry="28" fill="none" stroke="#1a1410" stroke-width="3"/>
+            <path d="M68 34 Q80 28 92 34" stroke="#1a1410" stroke-width="2.5" fill="none"/>
+            <ellipse cx="38" cy="38" rx="24" ry="22" fill="#d0c8b8" opacity="0.4"/>
+            <ellipse cx="122" cy="38" rx="24" ry="22" fill="#d0c8b8" opacity="0.4"/>
+            <line x1="0" y1="26" x2="8" y2="30" stroke="#666" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="160" y1="26" x2="152" y2="30" stroke="#666" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="prod-info">
+          <div class="prod-brand">Persol</div>
+          <div class="prod-name">Round Acetate Tortoise</div>
+          <div class="prod-bottom">
+            <span class="prod-price">5.100.000 ₫</span>
+            <span class="prod-tag">Có sẵn</span>
+          </div>
+          <button class="add-to-cart" onclick="addToCart(this)">Thêm vào giỏ</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="services">
+    <div class="section-header">
+      <h2 class="section-title">Dịch vụ của chúng tôi</h2>
+      <span class="section-link">Tìm hiểu thêm →</span>
+    </div>
+    <div class="svc-grid">
+      <div class="svc-card">
+        <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <div class="svc-title">Đo mắt miễn phí</div>
+        <div class="svc-desc">Đo thị lực và tư vấn lựa chọn kính phù hợp với chuyên viên quang học có kinh nghiệm. Đặt lịch online, nhận kết quả tại nhà.</div>
+      </div>
+      <div class="svc-card">
+        <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <div class="svc-title">Gia công kính theo đơn</div>
+        <div class="svc-desc">Cắt mài tròng kính chính xác theo đơn đo của bác sĩ. Hỗ trợ nhiều loại tròng: đơn tầng, đa tầng, chống ánh sáng xanh, photochromic.</div>
+      </div>
+      <div class="svc-card">
+        <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="m16 8 5 3-5 3V8z"/></svg>
+        <div class="svc-title">Tư vấn trực tuyến</div>
+        <div class="svc-desc">Chat hoặc video call với chuyên viên để được tư vấn kiểu dáng, thương hiệu phù hợp với khuôn mặt và phong cách của bạn.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRESCRIPTION -->
+  <section class="rx-section" id="rx-section">
+    <div class="rx-left">
+      <div class="hero-tag rx-tag">— Kính theo đơn</div>
+      <h2 class="rx-title">Đặt kính<br><em>theo đơn mắt</em><br>của bạn</h2>
+      <p class="rx-desc">Tải lên đơn đo mắt từ bác sĩ, chọn gọng yêu thích, chúng tôi làm phần còn lại. Nhận kính tận nơi trong 5–7 ngày làm việc.</p>
+      <button class="btn-white" onclick="scrollToSection('rx-section')">Bắt đầu ngay →</button>
+    </div>
+    <div class="rx-right">
+      <h3 class="rx-steps-title">Quy trình đơn giản</h3>
+      <p class="rx-steps-sub">4 bước là xong, không cần đến cửa hàng</p>
+      <div class="rx-steps">
+        <div class="rx-step">
+          <div class="step-num">01</div>
+          <div class="step-text">
+            <strong>Tải đơn đo mắt</strong>
+            <span>Chụp ảnh hoặc scan đơn của bác sĩ mắt</span>
+          </div>
+        </div>
+        <div class="rx-step">
+          <div class="step-num">02</div>
+          <div class="step-text">
+            <strong>Chọn gọng kính</strong>
+            <span>Duyệt qua hàng nghìn mẫu gọng</span>
+          </div>
+        </div>
+        <div class="rx-step">
+          <div class="step-num">03</div>
+          <div class="step-text">
+            <strong>Xác nhận & thanh toán</strong>
+            <span>Đội ngũ kiểm tra lại đơn trước khi gia công</span>
+          </div>
+        </div>
+        <div class="rx-step">
+          <div class="step-num">04</div>
+          <div class="step-text">
+            <strong>Nhận kính tại nhà</strong>
+            <span>Giao hàng toàn quốc, có kiểm tra khi nhận</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">VISTA<span>.</span>OPTIC</div>
+        <p class="footer-tagline">Kính mắt chất lượng cao,<br>mua hàng không rời ghế.</p>
+      </div>
+      <div>
+        <div class="footer-heading">Sản phẩm</div>
+        <ul class="footer-links">
+          <li><a href="#">Kính mắt thường</a></li>
+          <li><a href="#">Kính râm</a></li>
+          <li><a href="#">Kính theo đơn</a></li>
+          <li><a href="#">Pre-order</a></li>
+          <li><a href="#">Sale & ưu đãi</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Hỗ trợ</div>
+        <ul class="footer-links">
+          <li><a href="#">Đo mắt online</a></li>
+          <li><a href="#">Hướng dẫn đặt hàng</a></li>
+          <li><a href="#">Chính sách đổi trả</a></li>
+          <li><a href="#">Theo dõi đơn hàng</a></li>
+          <li><a href="#">Liên hệ</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Công ty</div>
+        <ul class="footer-links">
+          <li><a href="#">Về chúng tôi</a></li>
+          <li><a href="#">Thương hiệu đối tác</a></li>
+          <li><a href="#">Tuyển dụng</a></li>
+          <li><a href="#">Điều khoản dịch vụ</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 Vista Optic. All rights reserved.</span>
+      <span>TP. Hồ Chí Minh, Việt Nam</span>
+    </div>
+  </footer>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast">Đã thêm vào giỏ hàng!</div>
+
+<script src="../assets/js/main.js"></script>
+</body>
+</html>
