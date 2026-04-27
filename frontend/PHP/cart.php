@@ -43,7 +43,7 @@ ini_set('display_errors', 1);
 
 <button onclick="checkout()">Đặt hàng</button>
 
-<!-- ✅ PATH ĐÚNG -->
+
 <script src="../assets/js/cart.js"></script>
 
 </body>
