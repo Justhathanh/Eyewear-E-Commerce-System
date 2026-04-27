@@ -9,7 +9,90 @@ class OrderController
     {
         $this->db = getConnection();
     }
+    // =========================================================
+    // POST /api/orders
+    // =========================================================
+    public function create(): void
+    {
+        $userId = $this->requireAuth();
 
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (
+            !$data ||
+            !isset($data['items']) ||
+            !is_array($data['items']) ||
+            count($data['items']) === 0
+        ) {
+            $this->json(['error' => 'Dữ liệu không hợp lệ'], 400);
+            return;
+        }
+
+        $items = $data['items'];
+
+        try {
+            $this->db->beginTransaction();
+
+            $total = 0;
+            $productPrices = [];
+
+            // 👉 lấy giá + tính tổng
+            foreach ($items as $item) {
+                $stmt = $this->db->prepare("SELECT price FROM products WHERE id = :id");
+                $stmt->execute([':id' => $item['productId']]);
+
+                $price = $stmt->fetchColumn();
+
+                if ($price === false) {
+                    throw new Exception("Sản phẩm không tồn tại");
+                }
+
+                $productPrices[$item['productId']] = $price;
+                $total += $price * $item['quantity'];
+            }
+
+            // 👉 tạo order
+            $stmt = $this->db->prepare("
+                INSERT INTO orders (user_id, total_price, status, created_at)
+                VALUES (:userId, :total, 'PENDING', NOW())
+            ");
+            $stmt->execute([
+                ':userId' => $userId,
+                ':total'  => $total
+            ]);
+
+            $orderId = $this->db->lastInsertId();
+
+            // 👉 tạo order_items
+            $itemStmt = $this->db->prepare("
+                INSERT INTO order_items (order_id, product_id, quantity, price)
+                VALUES (:orderId, :productId, :quantity, :price)
+            ");
+
+            foreach ($items as $item) {
+                $itemStmt->execute([
+                    ':orderId'   => $orderId,
+                    ':productId' => $item['productId'],
+                    ':quantity'  => $item['quantity'],
+                    ':price'     => $productPrices[$item['productId']]
+                ]);
+            }
+
+            $this->db->commit();
+
+            $this->json([
+                'message' => 'Đặt hàng thành công',
+                'orderId' => $orderId
+            ]);
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+
+            $this->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     // =========================================================
     // GET /api/orders/history
     // =========================================================
