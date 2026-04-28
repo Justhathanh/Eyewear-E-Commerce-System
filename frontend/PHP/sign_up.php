@@ -1,25 +1,26 @@
 <?php
-include "db.php";
+require_once "db.php";
 
-$name = $_POST['name'];
-$email = $_POST['email'];
-$password = $_POST['password'];
+$name     = trim($_POST['name'] ?? '');
+$email    = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
 
-// kiểm tra email đã tồn tại
-$check = mysqli_query($conn, "SELECT id FROM users WHERE email='$email'");
-if (mysqli_num_rows($check) > 0) {
-    // quay lại home + giữ dữ liệu
+if (!$name || !$email || !$password) {
+    header("Location: home.php?signup_error=1");
+    exit();
+}
+
+$check = $pdo->prepare("SELECT user_id FROM users WHERE email = ? LIMIT 1");
+$check->execute([$email]);
+
+if ($check->fetch()) {
     header("Location: home.php?signup_error=1&name=" . urlencode($name) . "&email=" . urlencode($email));
     exit();
 }
 
-// không trùng → mới hash + insert
 $hash = password_hash($password, PASSWORD_DEFAULT);
+$stmt = $pdo->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
+$stmt->execute([$name, $email, $hash]);
 
-$sql = "INSERT INTO users (name, email, password)
-        VALUES ('$name', '$email', '$hash')";
-
-if (mysqli_query($conn, $sql)) {
-    header("Location: home.php?signup_success=1");
-    exit();
-}
+header("Location: home.php?signup_success=1");
+exit();

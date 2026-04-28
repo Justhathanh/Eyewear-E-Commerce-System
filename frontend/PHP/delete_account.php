@@ -1,9 +1,14 @@
 <?php
 session_start();
-include "db.php";
+require_once "db.php";
 
-$id = $_SESSION['user_id'];
-mysqli_query($conn, "DELETE FROM users WHERE id=$id");
+if (!isset($_SESSION['user_id'])) {
+    header("Location: home.php");
+    exit();
+}
+
+$stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ?");
+$stmt->execute([$_SESSION['user_id']]);
 
 session_destroy();
 header("Location: home.php");

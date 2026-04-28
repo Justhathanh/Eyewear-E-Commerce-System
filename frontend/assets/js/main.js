@@ -1,83 +1,84 @@
 /* =============================
    NAVBAR — scroll shadow
    ============================= */
-const navbar = document.getElementById("navbar");
-window.addEventListener("scroll", () => {
-  navbar.classList.toggle("scrolled", window.scrollY > 20);
-});
+const navbar = document.getElementById('navbar');
+if (navbar) {
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 20);
+  });
+}
 
 /* =============================
-   SMOOTH SCROLL HELPER
+   SMOOTH SCROLL
    ============================= */
 function scrollToSection(id) {
   const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: "smooth" });
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
 /* =============================
-   STAT COUNTER ANIMATION
+   STAT COUNTER
    ============================= */
 function animateCounter(el) {
   const target = parseInt(el.dataset.target, 10);
-  const duration = 1500;
-  const step = 16;
-  const steps = duration / step;
-  const increment = target / steps;
-  let current = 0;
-
-  const timer = setInterval(() => {
-    current += increment;
-    if (current >= target) {
-      current = target;
-      clearInterval(timer);
-    }
-    el.textContent =
-      target >= 1000
-        ? Math.round(current).toLocaleString("vi-VN") + "+"
-        : Math.round(current) + "+";
-  }, step);
+  const steps  = 1500 / 16;
+  const inc    = target / steps;
+  let current  = 0;
+  const timer  = setInterval(() => {
+    current += inc;
+    if (current >= target) { current = target; clearInterval(timer); }
+    el.textContent = target >= 1000
+      ? Math.round(current).toLocaleString('vi-VN') + '+'
+      : Math.round(current) + '+';
+  }, 16);
 }
 
-const statsObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        const counters = entry.target.querySelectorAll(
-          ".stat-num[data-target]",
-        );
-        counters.forEach(animateCounter);
-        statsObserver.unobserve(entry.target);
+const statsSection = document.querySelector('.stats');
+if (statsSection) {
+  new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll('.stat-num[data-target]').forEach(animateCounter);
+        statsObserver.unobserve(e.target);
       }
     });
-  },
-  { threshold: 0.4 },
-);
-
-const statsSection = document.querySelector(".stats");
-if (statsSection) statsObserver.observe(statsSection);
+  }, { threshold: 0.4 }).observe(statsSection);
+}
+// alias để IntersectionObserver có thể unobserve
+const statsObserver = new IntersectionObserver(() => {});
 
 /* =============================
-   CART
+   CART (localStorage)
    ============================= */
-let cartCount = 0;
-const cartCountEl = document.getElementById("cartCount");
+function getCart() {
+  return JSON.parse(localStorage.getItem('cart') || '[]');
+}
 
-function addToCart(btn) {
-  cartCount++;
-  cartCountEl.textContent = cartCount;
-  showToast("Đã thêm vào giỏ hàng!");
+function saveCart(cart) {
+  localStorage.setItem('cart', JSON.stringify(cart));
+  updateCartCount();
+}
 
-  btn.textContent = "✓ Đã thêm";
-  btn.style.background = "var(--ink)";
-  btn.style.color = "var(--cream)";
-  btn.style.borderColor = "var(--ink)";
+function updateCartCount() {
+  const count = getCart().reduce((s, i) => s + i.qty, 0);
+  document.querySelectorAll('#cartCount').forEach(el => el.textContent = count);
+}
 
+function addToCart(btn, id, name, price) {
+  const cart = getCart();
+  const idx  = cart.findIndex(i => i.id === id);
+  if (idx > -1) cart[idx].qty++;
+  else cart.push({ id, name, price: parseFloat(price), qty: 1 });
+  saveCart(cart);
+  showToast('Đã thêm vào giỏ hàng!');
+
+  btn.textContent = '✓ Đã thêm';
+  btn.style.background = 'var(--ink)';
+  btn.style.color = 'var(--cream)';
   setTimeout(() => {
-    const isPre = btn.closest(".prod-card").dataset.type === "preorder";
-    btn.textContent = isPre ? "Đặt trước" : "Thêm vào giỏ";
-    btn.style.background = "";
-    btn.style.color = "";
-    btn.style.borderColor = "";
+    btn.textContent = btn.closest('.prod-card')?.dataset.type === 'preorder' ? 'Đặt trước' : 'Thêm vào giỏ';
+    btn.style.background = '';
+    btn.style.color = '';
   }, 2000);
 }
 
@@ -86,73 +87,83 @@ function addToCart(btn) {
    ============================= */
 let toastTimer;
 function showToast(msg) {
-  const toast = document.getElementById("toast");
+  const toast = document.getElementById('toast');
+  if (!toast) return;
   toast.textContent = msg;
-  toast.classList.add("show");
+  toast.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove("show"), 2500);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
 /* =============================
    PRODUCT FILTER
    ============================= */
-const filterBtns = document.querySelectorAll(".filter-btn");
-const prodCards = document.querySelectorAll(".prod-card");
-
-filterBtns.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    filterBtns.forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    const filter = btn.dataset.filter;
-    prodCards.forEach((card) => {
-      const match = filter === "all" || card.dataset.type === filter;
-      card.classList.toggle("hidden", !match);
-    });
+document.addEventListener('click', e => {
+  if (!e.target.classList.contains('filter-btn')) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  const filter = e.target.dataset.filter;
+  document.querySelectorAll('.prod-card').forEach(card => {
+    card.classList.toggle('hidden', filter !== 'all' && card.dataset.type !== filter);
   });
 });
 
 /* =============================
-   CATEGORY CARD CLICK
+   LOGIN MODAL
    ============================= */
-document.querySelectorAll(".cat-card").forEach((card) => {
-  card.addEventListener("click", () => {
-    const cat = card.dataset.category;
-    const labels = {
-      regular: "Kính mắt thường",
-      sunglasses: "Kính râm",
-      prescription: "Kính theo đơn",
-    };
-    scrollToSection("products");
-    if (cat === "prescription") {
-      setTimeout(() => scrollToSection("rx-section"), 400);
-    }
+const loginModal   = document.getElementById('loginModal');
+const openLoginBtn = document.getElementById('openLoginBtn');
+const closeLoginBtn= document.getElementById('closeLoginBtn');
+
+if (openLoginBtn && loginModal) {
+  openLoginBtn.addEventListener('click', () => loginModal.classList.add('show'));
+}
+if (closeLoginBtn && loginModal) {
+  closeLoginBtn.addEventListener('click', () => loginModal.classList.remove('show'));
+}
+if (loginModal) {
+  loginModal.addEventListener('click', e => {
+    if (e.target === loginModal) loginModal.classList.remove('show');
   });
-});
+}
+
+function switchModal(panel) {
+  document.getElementById('formSignin').style.display = panel === 'signin' ? '' : 'none';
+  document.getElementById('formSignup').style.display = panel === 'signup' ? '' : 'none';
+}
+
+// Auto-open modal nếu có lỗi login/signup trong URL
+if (loginModal && (location.search.includes('login_error') || location.search.includes('signup_error') || location.search.includes('signup_success'))) {
+  loginModal.classList.add('show');
+  if (location.search.includes('signup_error') || location.search.includes('signup_success')) {
+    switchModal('signup');
+  }
+}
 
 /* =============================
    FADE-IN ON SCROLL
    ============================= */
-const fadeEls = document.querySelectorAll(
-  ".svc-card, .prod-card, .cat-card, .rx-step, .stat-item",
-);
-
-const fadeObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.style.opacity = "1";
-        entry.target.style.transform = "translateY(0)";
-        fadeObserver.unobserve(entry.target);
+function initFadeObserver() {
+  const els = document.querySelectorAll('.svc-card, .prod-card, .cat-card, .rx-step, .stat-item');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+        obs.unobserve(e.target);
       }
     });
-  },
-  { threshold: 0.1 },
-);
+  }, { threshold: 0.1 });
 
-fadeEls.forEach((el, i) => {
-  el.style.opacity = "0";
-  el.style.transform = "translateY(16px)";
-  el.style.transition = `opacity 0.5s ease ${(i % 4) * 0.1}s, transform 0.5s ease ${(i % 4) * 0.1}s`;
-  fadeObserver.observe(el);
+  els.forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(16px)';
+    el.style.transition = `opacity 0.5s ease ${(i % 4) * 0.1}s, transform 0.5s ease ${(i % 4) * 0.1}s`;
+    obs.observe(el);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateCartCount();
+  initFadeObserver();
 });

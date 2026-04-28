@@ -1,215 +1,280 @@
 <?php
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
-
-// Các biến xử lý Modal báo lỗi/thành công từ trang login cũ
-$showModal = isset($_GET['login_error']) || isset($_GET['signup_error']) || isset($_GET['signup_success']) ? 'show' : '';
-$activePanel = isset($_GET['signup_error']) ? 'active' : '';
-$old_name  = $_GET['name'] ?? '';
-$old_email = $_GET['email'] ?? '';
+$userName   = $_SESSION['name'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project</title>
-
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Boxicons (Cho icon mạng xã hội trong Modal) -->
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-
-    <!-- CSS ngoài -->
-    <link rel="stylesheet" href="../assest/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vista Optic — Kính Mắt Chất Lượng Cao</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
 </head>
-
 <body>
 
-<!-- ==========================================
-     PHẦN HEADER (TIÊU ĐỀ & MENU ĐIỀU HƯỚNG)
-     ========================================== -->
-<header>
-    <div class="header">
-        <img src="../assest/img/logo.png" alt="Logo" class="logo">
+  <!-- NAV -->
+  <nav id="navbar">
+    <div class="nav-logo" onclick="window.location='home.php'">VISTA<span>.</span>OPTIC</div>
+    <ul class="nav-links">
+      <li><a href="product.php">Kính mắt</a></li>
+      <li><a href="product.php?category=sunglasses">Kính râm</a></li>
+      <li><a href="#">Đo mắt</a></li>
+      <li><a href="#">Thương hiệu</a></li>
+      <li><a href="#">Sale</a></li>
+    </ul>
+    <div class="nav-actions">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
 
-        <div class="right">
-            <div class="call">
-                <i class="fa-solid fa-phone"></i> 
-                <span>Call Center</span>
-            </div>
-
-            <div class="ship">
-                <i class="fa-solid fa-truck"></i> 
-                <span>Free Shipping</span>
-            </div>
+      <?php if ($isLoggedIn): ?>
+        <div class="user-menu">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div class="nav-dropdown">
+            <p>Xin chào, <?= htmlspecialchars($userName) ?></p>
+            <a href="order-history.php">Đơn hàng của tôi</a>
+            <a href="logout.php">Đăng xuất</a>
+            <a href="delete_account.php" onclick="return confirm('Xoá tài khoản?')">Xoá tài khoản</a>
+          </div>
         </div>
+      <?php else: ?>
+        <svg class="nav-icon" id="openLoginBtn" style="cursor:pointer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <?php endif; ?>
+
+      <button class="cart-btn" onclick="window.location='cart.php'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Giỏ (<span id="cartCount">0</span>)
+      </button>
     </div>
-    
-    <div class="menu">
-        <ul>
-            <li><a href="#">Shop</a></li>
-            <li><a href="#">Promo</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Blog</a></li>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-tag">Bộ sưu tập 2025</div>
+      <h1 class="hero-title">Tầm nhìn<br>tinh tế,<br><em>phong cách</em><br>vượt thời.</h1>
+      <p class="hero-desc">Kính mắt không chỉ là dụng cụ quang học — đó là ngôn ngữ phong cách. Khám phá bộ sưu tập được tuyển chọn kỹ lưỡng từ các thương hiệu hàng đầu thế giới.</p>
+      <div class="hero-cta">
+        <button class="btn-primary" onclick="scrollToSection('products')">Khám phá ngay</button>
+        <button class="btn-outline" onclick="scrollToSection('rx-section')">Đặt kính theo đơn →</button>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-visual floating">
+        <div class="eyeglass-frame">
+          <svg class="glasses-svg" viewBox="0 0 260 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#c4974a;stop-opacity:1"/>
+                <stop offset="100%" style="stop-color:#8b6f47;stop-opacity:1"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#a0c8e8;stop-opacity:0.35"/>
+                <stop offset="100%" style="stop-color:#7aa8d8;stop-opacity:0.15"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="40" x2="30" y2="50" stroke="url(#g1)" stroke-width="4" stroke-linecap="round"/>
+            <line x1="260" y1="40" x2="230" y2="50" stroke="url(#g1)" stroke-width="4" stroke-linecap="round"/>
+            <path d="M105 56 Q130 48 155 56" stroke="url(#g1)" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <rect x="18" y="28" width="88" height="60" rx="20" fill="url(#g1)" opacity="0.9"/>
+            <rect x="24" y="34" width="76" height="48" rx="16" fill="url(#g2)"/>
+            <rect x="154" y="28" width="88" height="60" rx="20" fill="url(#g1)" opacity="0.9"/>
+            <rect x="160" y="34" width="76" height="48" rx="16" fill="url(#g2)"/>
+            <circle cx="18" cy="45" r="5" fill="#8b6f47"/>
+            <circle cx="18" cy="45" r="2.5" fill="#c4974a"/>
+            <circle cx="242" cy="45" r="5" fill="#8b6f47"/>
+            <circle cx="242" cy="45" r="2.5" fill="#c4974a"/>
+            <ellipse cx="42" cy="44" rx="8" ry="5" fill="white" opacity="0.2" transform="rotate(-15 42 44)"/>
+            <ellipse cx="178" cy="44" rx="8" ry="5" fill="white" opacity="0.2" transform="rotate(-15 178 44)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="hero-badge"><strong>-20%</strong>Pre-order ngay</div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-item"><div class="stat-num" data-target="2400">0</div><div class="stat-label">Mẫu kính</div></div>
+    <div class="stat-item"><div class="stat-num" data-target="120">0</div><div class="stat-label">Thương hiệu</div></div>
+    <div class="stat-item"><div class="stat-num stat-text">48h</div><div class="stat-label">Giao hàng nhanh</div></div>
+    <div class="stat-item"><div class="stat-num" data-target="15000">0</div><div class="stat-label">Khách hàng</div></div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <section class="section" id="categories">
+    <div class="section-header">
+      <h2 class="section-title">Danh mục sản phẩm</h2>
+      <a href="product.php" class="section-link">Xem tất cả →</a>
+    </div>
+    <div class="cat-grid">
+      <div class="cat-card" onclick="window.location='product.php?category=regular'">
+        <div class="cat-bg cat-bg-1">
+          <svg viewBox="0 0 200 100" width="180" height="90"><rect x="10" y="20" width="75" height="55" rx="14" fill="none" stroke="#c4974a" stroke-width="3.5"/><rect x="115" y="20" width="75" height="55" rx="14" fill="none" stroke="#c4974a" stroke-width="3.5"/><path d="M85 43 Q100 36 115 43" stroke="#c4974a" stroke-width="3.5" fill="none"/><rect x="16" y="26" width="63" height="43" rx="10" fill="#a0c8e8" opacity="0.12"/><rect x="121" y="26" width="63" height="43" rx="10" fill="#a0c8e8" opacity="0.12"/><line x1="0" y1="35" x2="10" y2="40" stroke="#8b6f47" stroke-width="3" stroke-linecap="round"/><line x1="200" y1="35" x2="190" y2="40" stroke="#8b6f47" stroke-width="3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="cat-info"><div class="cat-name">Kính mắt thường</div><div class="cat-count">842 sản phẩm</div></div>
+      </div>
+      <div class="cat-card" onclick="window.location='product.php?category=sunglasses'">
+        <div class="cat-bg cat-bg-2">
+          <svg viewBox="0 0 200 100" width="180" height="90"><rect x="10" y="20" width="75" height="55" rx="28" fill="none" stroke="#e8b85c" stroke-width="3.5"/><rect x="115" y="20" width="75" height="55" rx="28" fill="none" stroke="#e8b85c" stroke-width="3.5"/><path d="M85 43 Q100 36 115 43" stroke="#e8b85c" stroke-width="3.5" fill="none"/><rect x="16" y="26" width="63" height="43" rx="24" fill="#d4943a" opacity="0.3"/><rect x="121" y="26" width="63" height="43" rx="24" fill="#d4943a" opacity="0.3"/><line x1="0" y1="35" x2="10" y2="40" stroke="#c4974a" stroke-width="3" stroke-linecap="round"/><line x1="200" y1="35" x2="190" y2="40" stroke="#c4974a" stroke-width="3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="cat-info"><div class="cat-name">Kính râm</div><div class="cat-count">1.200 sản phẩm</div></div>
+      </div>
+      <div class="cat-card" onclick="window.location='order.php?type=prescription'">
+        <div class="cat-bg cat-bg-3">
+          <svg viewBox="0 0 200 100" width="180" height="90"><rect x="10" y="15" width="75" height="65" rx="8" fill="none" stroke="#7ab8e8" stroke-width="3.5"/><rect x="115" y="15" width="75" height="65" rx="8" fill="none" stroke="#7ab8e8" stroke-width="3.5"/><path d="M85 43 Q100 36 115 43" stroke="#7ab8e8" stroke-width="3.5" fill="none"/><rect x="16" y="21" width="63" height="53" rx="4" fill="#5090b8" opacity="0.2"/><rect x="121" y="21" width="63" height="53" rx="4" fill="#5090b8" opacity="0.2"/><line x1="0" y1="35" x2="10" y2="40" stroke="#5890a8" stroke-width="3" stroke-linecap="round"/><line x1="200" y1="35" x2="190" y2="40" stroke="#5890a8" stroke-width="3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="cat-info"><div class="cat-name">Kính theo đơn</div><div class="cat-count">Đặt theo đơn đo</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS (load từ API) -->
+  <section class="products-section" id="products">
+    <div class="section-header">
+      <h2 class="section-title">Nổi bật tuần này</h2>
+      <a href="product.php" class="section-link">Xem thêm →</a>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">Tất cả</button>
+      <button class="filter-btn" data-filter="available">Có sẵn</button>
+      <button class="filter-btn" data-filter="preorder">Pre-order</button>
+    </div>
+    <div class="prod-grid" id="prodGrid">
+      <p style="color:var(--muted);font-size:.85rem">Đang tải sản phẩm…</p>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="services">
+    <div class="section-header">
+      <h2 class="section-title">Dịch vụ của chúng tôi</h2>
+      <span class="section-link">Tìm hiểu thêm →</span>
+    </div>
+    <div class="svc-grid">
+      <div class="svc-card">
+        <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <div class="svc-title">Đo mắt miễn phí</div>
+        <div class="svc-desc">Đo thị lực và tư vấn lựa chọn kính phù hợp với chuyên viên quang học có kinh nghiệm. Đặt lịch online, nhận kết quả tại nhà.</div>
+      </div>
+      <div class="svc-card">
+        <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <div class="svc-title">Gia công kính theo đơn</div>
+        <div class="svc-desc">Cắt mài tròng kính chính xác theo đơn đo của bác sĩ. Hỗ trợ nhiều loại tròng: đơn tầng, đa tầng, chống ánh sáng xanh, photochromic.</div>
+      </div>
+      <div class="svc-card">
+        <svg class="svc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="m16 8 5 3-5 3V8z"/></svg>
+        <div class="svc-title">Tư vấn trực tuyến</div>
+        <div class="svc-desc">Chat hoặc video call với chuyên viên để được tư vấn kiểu dáng, thương hiệu phù hợp với khuôn mặt và phong cách của bạn.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRESCRIPTION -->
+  <section class="rx-section" id="rx-section">
+    <div class="rx-left">
+      <div class="hero-tag rx-tag">— Kính theo đơn</div>
+      <h2 class="rx-title">Đặt kính<br><em>theo đơn mắt</em><br>của bạn</h2>
+      <p class="rx-desc">Tải lên đơn đo mắt từ bác sĩ, chọn gọng yêu thích, chúng tôi làm phần còn lại. Nhận kính tận nơi trong 5–7 ngày làm việc.</p>
+      <button class="btn-white" onclick="window.location='order.php?type=prescription'">Bắt đầu ngay →</button>
+    </div>
+    <div class="rx-right">
+      <h3 class="rx-steps-title">Quy trình đơn giản</h3>
+      <p class="rx-steps-sub">4 bước là xong, không cần đến cửa hàng</p>
+      <div class="rx-steps">
+        <div class="rx-step"><div class="step-num">01</div><div class="step-text"><strong>Tải đơn đo mắt</strong><span>Chụp ảnh hoặc scan đơn của bác sĩ mắt</span></div></div>
+        <div class="rx-step"><div class="step-num">02</div><div class="step-text"><strong>Chọn gọng kính</strong><span>Duyệt qua hàng nghìn mẫu gọng</span></div></div>
+        <div class="rx-step"><div class="step-num">03</div><div class="step-text"><strong>Xác nhận & thanh toán</strong><span>Đội ngũ kiểm tra lại đơn trước khi gia công</span></div></div>
+        <div class="rx-step"><div class="step-num">04</div><div class="step-text"><strong>Nhận kính tại nhà</strong><span>Giao hàng toàn quốc, có kiểm tra khi nhận</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">VISTA<span>.</span>OPTIC</div>
+        <p class="footer-tagline">Kính mắt chất lượng cao,<br>mua hàng không rời ghế.</p>
+      </div>
+      <div>
+        <div class="footer-heading">Sản phẩm</div>
+        <ul class="footer-links">
+          <li><a href="product.php?category=regular">Kính mắt thường</a></li>
+          <li><a href="product.php?category=sunglasses">Kính râm</a></li>
+          <li><a href="order.php?type=prescription">Kính theo đơn</a></li>
+          <li><a href="product.php?type=preorder">Pre-order</a></li>
+          <li><a href="#">Sale & ưu đãi</a></li>
         </ul>
-
-        <div class="search">
-            <input type="text" placeholder="Search what you need"> 
-            <i class="fa-solid fa-magnifying-glass"></i>
-        </div>
-
-        <div class="icon">
-            <a href="#"><i class="fa-regular fa-heart"></i></a>
-            <a href="#"><i class="fa-solid fa-cart-arrow-down"></i></a>
-
-            <!-- USER MENU -->
-            <div class="user-menu">
-                <?php if ($isLoggedIn): ?>
-                    <!-- Nếu đã đăng nhập thì hiện dropdown thông tin -->
-                    <i class="fa-regular fa-user"></i>
-                    <div class="dropdown">
-                        <p>Xin chào, <?= htmlspecialchars($_SESSION['name'] ?? 'User') ?></p>
-                        <a href="logout.php">Đăng xuất</a>
-                        <a href="delete_account.php"
-                           onclick="return confirm('Bạn có chắc muốn xoá tài khoản?');">
-                           Xóa tài khoản
-                        </a>
-                    </div>
-                <?php else: ?>
-                    <!-- Nếu chưa đăng nhập thì bấm icon sẽ mở Modal Login -->
-                    <a href="javascript:void(0)" id="openLoginBtn" style="color: inherit;">
-                        <i class="fa-regular fa-user"></i>
-                    </a>
-                <?php endif; ?>
-            </div>
-
-            <a href="#"><i class="fa-regular fa-bell"></i></a>
-        </div>
+      </div>
+      <div>
+        <div class="footer-heading">Hỗ trợ</div>
+        <ul class="footer-links">
+          <li><a href="#">Đo mắt online</a></li>
+          <li><a href="#">Hướng dẫn đặt hàng</a></li>
+          <li><a href="#">Chính sách đổi trả</a></li>
+          <li><a href="order-history.php">Theo dõi đơn hàng</a></li>
+          <li><a href="#">Liên hệ</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Công ty</div>
+        <ul class="footer-links">
+          <li><a href="#">Về chúng tôi</a></li>
+          <li><a href="#">Thương hiệu đối tác</a></li>
+          <li><a href="#">Tuyển dụng</a></li>
+          <li><a href="#">Điều khoản dịch vụ</a></li>
+        </ul>
+      </div>
     </div>
-</header>
-
-<!-- ==========================================
-     PHẦN NỘI DUNG CHÍNH (MAIN CONTENT)
-     ========================================== -->
-<div class="main">
-
-    <!-- BANNER QUẢNG CÁO -->
-    <div class="banner">
-        <img src="" alt="">
-        <div class="content">
-            <h2>Welcome to Our Store</h2>
-            <p>Your eyes deserve the best!</p>
-            <button>Find Out More</button>
-        </div>
+    <div class="footer-bottom">
+      <span>© 2025 Vista Optic. All rights reserved.</span>
+      <span>TP. Hồ Chí Minh, Việt Nam</span>
     </div>
+  </footer>
 
-    <!-- DANH SÁCH SẢN PHẨM (GALLERY) -->
-    <div class="gallery">
-        <h2 class="title">Our Products</h2>
-
-        <div class="product-item">
-            <div class="product">
-                <img src="" alt="">
-                <div class="category">Category</div>
-                <h3 class="title">Product Name</h3>
-                <i class="fa-solid fa-arrow-right"></i>
-            </div>
-
-            <div class="product">
-                <img src="" alt="">
-                <div class="category">Category</div>
-                <h3 class="title">Product Name</h3>
-                <i class="fa-solid fa-arrow-right"></i>
-            </div>
-
-            <div class="product">
-                <img src="" alt="">
-                <div class="category">Category</div>
-                <h3 class="title">Product Name</h3>
-                <i class="fa-solid fa-arrow-right"></i>
-            </div>
-        </div>
+  <!-- LOGIN MODAL (chỉ hiện khi chưa đăng nhập) -->
+  <?php if (!$isLoggedIn): ?>
+  <div class="modal-overlay" id="loginModal">
+    <span class="close-modal" id="closeLoginBtn">✕</span>
+    <div class="modal-container" id="modalContainer">
+      <div class="modal-form" id="formSignin">
+        <h2>Đăng nhập</h2>
+        <?php if (isset($_GET['login_error'])): ?>
+          <p class="form-error">Email hoặc mật khẩu không đúng.</p>
+        <?php endif; ?>
+        <form action="login_process.php" method="POST">
+          <input type="email" name="email" placeholder="Email" required />
+          <input type="password" name="password" placeholder="Mật khẩu" required />
+          <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Đăng nhập</button>
+        </form>
+        <p class="modal-switch">Chưa có tài khoản? <span onclick="switchModal('signup')">Đăng ký</span></p>
+      </div>
+      <div class="modal-form" id="formSignup" style="display:none">
+        <h2>Tạo tài khoản</h2>
+        <?php if (isset($_GET['signup_error'])): ?>
+          <p class="form-error">Email đã tồn tại.</p>
+        <?php endif; ?>
+        <?php if (isset($_GET['signup_success'])): ?>
+          <p class="form-success">Tạo tài khoản thành công!</p>
+        <?php endif; ?>
+        <form action="sign_up.php" method="POST">
+          <input type="text" name="name" placeholder="Họ tên" value="<?= htmlspecialchars($_GET['name'] ?? '') ?>" required />
+          <input type="email" name="email" placeholder="Email" value="<?= htmlspecialchars($_GET['email'] ?? '') ?>" required />
+          <input type="password" name="password" placeholder="Mật khẩu" required />
+          <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Đăng ký</button>
+        </form>
+        <p class="modal-switch">Đã có tài khoản? <span onclick="switchModal('signin')">Đăng nhập</span></p>
+      </div>
     </div>
-</div>
+  </div>
+  <?php endif; ?>
 
-<!-- ==========================================
-     PHẦN MODAL OVERLAY (ĐĂNG NHẬP / ĐĂNG KÝ)
-     ========================================== -->
-<div class="modal-overlay <?= $showModal ?>" id="loginModal">
-    <i class='bx bx-x close-modal' id="closeLoginBtn"></i>
-    
-    <div class="container <?= $activePanel ?>" id="container">
-        <!-- SIGN UP -->
-        <div class="form-container sign-up">
-            <form action="sign_up.php" method="POST">
-                <h1>Create Account</h1>
-                <div class="social-icons">
-                    <a class="icon"><i class='bx bxl-facebook'></i></a>
-                    <a class="icon"><i class='bx bxl-google'></i></a>
-                    <a class="icon"><i class='bx bxl-linkedin'></i></a>
-                    <a class="icon"><i class='bx bxl-github'></i></a>
-                </div>
-                <span>or use your email for registration</span>
-                <input type="text" name="name" placeholder="Name" value="<?= htmlspecialchars($old_name) ?>" required>
-                <input type="email" name="email" placeholder="Email" value="<?= htmlspecialchars($old_email) ?>">
-                <input type="password" name="password" placeholder="Password" required>
-                <!-- THÔNG BÁO SIGN UP -->
-                <?php
-                if (isset($_GET['signup_error'])) {
-                    echo '<p style="color:red; margin-top:-5px; font-size:14px;">Email đã tồn tại</p>';
-                }
-                if (isset($_GET['signup_success'])) {
-                    echo '<p style="color:green; margin-top:-5px; font-size:14px;">Tạo tài khoản thành công</p>';
-                }
-                ?>
-                <button type="submit">Sign Up</button>
-            </form>
-        </div>
+  <div id="toast" class="toast">Đã thêm vào giỏ hàng!</div>
 
-        <!-- SIGN IN -->
-        <div class="form-container sign-in">
-            <form action="login_process.php" method="POST">
-                <h1>Sign In</h1>
-                <div class="social-icons">
-                    <a class="icon"><i class='bx bxl-facebook'></i></a>
-                    <a class="icon"><i class='bx bxl-google'></i></a>
-                    <a class="icon"><i class='bx bxl-linkedin'></i></a>
-                    <a class="icon"><i class='bx bxl-github'></i></a>
-                </div>
-                <span>or use your email password</span>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Password" required>
-                <a href="#" class="fg">Forgot password?</a>
-                <!-- THÔNG BÁO LOGIN -->
-                <?php
-                if (isset($_GET['login_error'])) {
-                    echo '<p style="color:red; margin-top:-15px; font-size:14px;">Tài khoản không tồn tại hoặc sai thông tin</p>';
-                }
-                ?>
-                <button type="submit">Sign In</button>
-            </form>
-        </div>
-
-        <!-- TOGGLE -->
-        <div class="toggle-container">
-            <div class="toggle">
-                <div class="toggle-panel toggle-left">
-                    <h1>Welcome Back!</h1>
-                    <p>Enter your personal details to use all site features</p>
-                    <button class="hidden" id="login">Sign In</button>
-                </div>
-                <div class="toggle-panel toggle-right">
-                    <h1>Hello, Friend!</h1>
-                    <p>Register with your personal details to use all site features</p>
-                    <button class="hidden" id="register">Sign Up</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="script.js?v=2"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/main.js"></script>
 </body>
 </html>

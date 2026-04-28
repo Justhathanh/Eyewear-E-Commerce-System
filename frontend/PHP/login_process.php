@@ -1,24 +1,26 @@
 <?php
-
 session_start();
-include "db.php";
+require_once "db.php";
 
-$email = $_POST['email'];
-$password = $_POST['password'];
+$email    = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
 
-$sql = "SELECT * FROM users WHERE email='$email'";
-$result = mysqli_query($conn, $sql);
+if (!$email || !$password) {
+    header("Location: home.php?login_error=1");
+    exit();
+}
 
-// CHỈ KIỂM TRA ĐỂ KHÔNG BỊ CRASH
-if ($result && $user = mysqli_fetch_assoc($result)) {
+$stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
+$stmt->execute([$email]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // BỎ KIỂM TRA PASSWORD để demo bypass
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['name'] = $user['name'];
+if ($user && password_verify($password, $user['password'])) {
+    $_SESSION['user_id'] = $user['user_id'];
+    $_SESSION['name']    = $user['name'];
+    $_SESSION['role']    = $user['role'];
     header("Location: home.php");
     exit();
 }
 
-// Nếu không tìm thấy user hoặc có lỗi
 header("Location: home.php?login_error=1");
 exit();
