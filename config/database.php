@@ -1,29 +1,18 @@
 <?php
 class Database {
-    private $host = "127.0.0.1";
-    private $db_name = "shop";
-    private $username = "root";
-    private $password = "";      
-    private $port = "3307";      
+    private string $host = "mysql";
+    private string $db   = "eyewear_shop";
+    private string $user = "root";
+    private string $pass = "123456";
 
-    public $conn;
-
-    public function getConnection() {
-        $this->conn = null;
-
-        try {
-            $this->conn = new mysqli($this->host, $this->username, $this->password, $this->db_name, $this->port);
-            $this->conn->set_charset("utf8");
-
-            if ($this->conn->connect_error) {
-                throw new Exception("Kết nối database thất bại: " . $this->conn->connect_error);
-            }
-        } catch (Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-            exit;
-        }
-
-        return $this->conn;
+    public function getConnection(): PDO {
+        $pdo = new PDO(
+            "mysql:host={$this->host};dbname={$this->db};charset=utf8mb4",
+            $this->user,
+            $this->pass
+        );
+        $pdo->setAttribute(PDO::ATTR_ERRMODE,         PDO::ERRMODE_EXCEPTION);
+        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        return $pdo;
     }
 }
-?>
