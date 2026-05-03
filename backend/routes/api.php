@@ -51,6 +51,44 @@ elseif (preg_match('#^/api/orders/([^/]+)/reorder$#', $request, $m) && $method =
     (new OrderController())->reorder($m[1]);
 }
 
+// ── Feedbacks ────────────────────────────────────────────────
+
+// GET /api/products/{productId}/feedbacks
+elseif (preg_match('#^/api/products/(\d+)/feedbacks$#', $request, $m) && $method === 'GET') {
+    require_once __DIR__ . '/../controllers/FeedbackController.php';
+    (new FeedbackController())->getByProduct($m[1]);
+}
+
+// POST /api/feedbacks
+elseif ($request === '/api/feedbacks' && $method === 'POST') {
+    require_once __DIR__ . '/../controllers/FeedbackController.php';
+    (new FeedbackController())->create();
+}
+
+// GET /api/feedbacks/me
+elseif ($request === '/api/feedbacks/me' && $method === 'GET') {
+    require_once __DIR__ . '/../controllers/FeedbackController.php';
+    (new FeedbackController())->getMyFeedbacks();
+}
+
+// PUT /api/feedbacks/{feedbackId}
+elseif (preg_match('#^/api/feedbacks/(\d+)$#', $request, $m) && $method === 'PUT') {
+    require_once __DIR__ . '/../controllers/FeedbackController.php';
+    (new FeedbackController())->update($m[1]);
+}
+
+// DELETE /api/feedbacks/{feedbackId}
+elseif (preg_match('#^/api/feedbacks/(\d+)$#', $request, $m) && $method === 'DELETE') {
+    require_once __DIR__ . '/../controllers/FeedbackController.php';
+    (new FeedbackController())->delete($m[1]);
+}
+
+// PUT /api/admin/feedbacks/{feedbackId}/status
+elseif (preg_match('#^/api/admin/feedbacks/(\d+)/status$#', $request, $m) && $method === 'PUT') {
+    require_once __DIR__ . '/../controllers/FeedbackController.php';
+    (new FeedbackController())->updateStatus($m[1]);
+}
+
 // ── 404 ──────────────────────────────────────────────────────
 else {
     http_response_code(404);
