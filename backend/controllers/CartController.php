@@ -26,6 +26,15 @@ class CartController {
 
         $this->json(['items' => $items, 'total' => $total]);
     }
+    public function count(): void {
+        $userId = $this->requireAuth();
+
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM cart WHERE user_id = :userId");
+        $stmt->execute([':userId' => $userId]);
+        $count = (int)$stmt->fetchColumn();
+
+        $this->json(['count' => $count]);
+    }
 
     // POST /api/cart
     public function add(): void {

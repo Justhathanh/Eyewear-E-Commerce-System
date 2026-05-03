@@ -1,4 +1,3 @@
 <?php
-require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/api/config/database.php';
 $pdo = (new Database())->getConnection();
- 
