@@ -1,224 +1,155 @@
-// ─── CONFIG ────────────────────────────────────────────────────────────────
+// frontend/assets/js/order-history.js
 
-const API_BASE = "http://localhost:8080"; // đổi thành URL thật của backend
-const USE_MOCK = false; // ← set false khi backend sẵn sàng
 const PAGE_SIZE = 5;
 
-// ─── STATE ─────────────────────────────────────────────────────────────────
-
 let state = {
-  orders: [], // danh sách đang hiển thị (sau filter)
-  allOrders: [], // toàn bộ đơn hàng (từ API)
+  orders:      [],
+  allOrders:   [],
   currentPage: 1,
-  totalPages: 1,
-  loading: false,
-  error: null,
-  filters: {
-    status: "",
-    search: "",
-    sort: "newest",
-  },
+  totalPages:  1,
+  loading:     false,
+  error:       null,
+  filters: { status: '', search: '', sort: 'newest' },
 };
 
-// ─── API ───────────────────────────────────────────────────────────────────
+// ── API ───────────────────────────────────────────────────────────────────────
 
-/**
- * Gọi API lấy danh sách đơn hàng của user đang đăng nhập.
- *
- * Backend cần implement:
- *   GET /api/orders/history
- *   Header: Authorization: Bearer <token>
- *   Query: page (0-based), size, status, sort
- *   Response: { content: [...], totalElements, totalPages, number }
- */
 async function fetchOrdersFromAPI(page = 0) {
   const { status, sort } = state.filters;
-  const params = new URLSearchParams({
-    page,
-    size: PAGE_SIZE,
-    ...(status && { status }),
-    sort,
-  });
+  const params = new URLSearchParams({ page, size: PAGE_SIZE, sort });
+  if (status) params.set('status', status);
 
-  // Lấy token từ localStorage (điều chỉnh theo cơ chế auth của project)
-  const token = localStorage.getItem("accessToken") || "";
+  const res = await fetch(`/api/orders/history?${params}`, { credentials: 'include' });
 
-  const res = await fetch(`${API_BASE}/orders/history?${params}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    credentials: "include", // nếu dùng cookie session
-  });
-
-  if (res.status === 401)
-    throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
-  if (!res.ok)
-    throw new Error(`Lỗi máy chủ (${res.status}). Vui lòng thử lại sau.`);
+  if (res.status === 401) throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
+  if (!res.ok)            throw new Error(`Lỗi máy chủ (${res.status}). Vui lòng thử lại.`);
 
   return res.json();
 }
 
-/**
- * Hàm chính – load orders (mock hoặc API thật).
- */
+// ── Load ──────────────────────────────────────────────────────────────────────
+
 async function loadOrders(page = 1) {
   state.loading = true;
-  state.error = null;
+  state.error   = null;
   renderContainer();
 
   try {
-    let data;
+    const data = await fetchOrdersFromAPI(page - 1);  // API: 0-based
 
-    if (USE_MOCK) {
-      // ── Giả lập delay mạng ──
-      await sleep(700);
-      data = getMockData();
-    } else {
-      data = await fetchOrdersFromAPI(page - 1); // API dùng 0-based
-    }
-
-    // Chuẩn hóa về cấu trúc nội bộ
-    state.allOrders = data.content ?? data;
-    state.totalPages =
-      data.totalPages ?? Math.ceil(state.allOrders.length / PAGE_SIZE);
+    state.allOrders   = data.content ?? [];
+    state.totalPages  = data.totalPages ?? 1;
     state.currentPage = page;
 
-    applyLocalFilters(); // lọc + sort phía client (khi dùng mock)
+    applySearchFilter();
     renderStats();
     renderContainer();
     renderPagination();
   } catch (err) {
     state.error = err.message;
-    state.loading = false;
     renderContainer();
   }
 
   state.loading = false;
 }
 
-// ─── FILTER & SORT (client-side cho mock; khi dùng API thật gửi params lên server) ───
+// ── Client-side search (server handles status/sort) ───────────────────────────
 
-function applyLocalFilters() {
-  let list = [...state.allOrders];
-  const { status, search, sort } = state.filters;
+function applySearchFilter() {
+  const q = state.filters.search.toLowerCase();
+  if (!q) { state.orders = [...state.allOrders]; return; }
 
-  if (status) list = list.filter((o) => o.status === status);
-
-  if (search) {
-    const q = search.toLowerCase();
-    list = list.filter(
-      (o) =>
-        o.orderId.toLowerCase().includes(q) ||
-        o.items.some((i) => i.name.toLowerCase().includes(q)),
-    );
-  }
-
-  if (sort === "newest")
-    list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  if (sort === "oldest")
-    list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  if (sort === "highest") list.sort((a, b) => b.total - a.total);
-  if (sort === "lowest") list.sort((a, b) => a.total - b.total);
-
-  // Pagination phía client
-  const start = (state.currentPage - 1) * PAGE_SIZE;
-  state.orders = list.slice(start, start + PAGE_SIZE);
-  state.totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  state.orders = state.allOrders.filter(o =>
+    String(o.orderId).toLowerCase().includes(q) ||
+    (o.items || []).some(i => i.name.toLowerCase().includes(q))
+  );
 }
 
-// ─── RENDER ────────────────────────────────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────────────────────
 
 function renderStats() {
-  const all = state.allOrders;
-  const done = all.filter((o) => o.status === "delivered").length;
-  const spend = all.reduce((s, o) => s + o.total, 0);
+  const all  = state.allOrders;
+  const done = all.filter(o => o.status === 'COMPLETED').length;
+  const spend = all.reduce((s, o) => s + (o.total || 0), 0);
 
-  setText("statTotal", all.length);
-  setText("statDone", done);
-  setText("statSpend", formatCurrency(spend));
+  setText('statTotal', all.length);
+  setText('statDone',  done);
+  setText('statSpend', formatCurrency(spend));
 }
 
 function renderContainer() {
-  const el = document.getElementById("ordersContainer");
+  const el = document.getElementById('ordersContainer');
+  if (!el) return;
 
   if (state.loading) {
-    el.innerHTML = `
-      <div class="state-loading">
-        <div class="spinner"></div>
-        <div class="state-title">Đang tải đơn hàng…</div>
-      </div>`;
+    el.innerHTML = `<div class="state-box"><div class="spinner"></div><div class="state-title">Đang tải đơn hàng…</div></div>`;
     return;
   }
 
   if (state.error) {
     el.innerHTML = `
-      <div class="state-error">
+      <div class="state-box">
         <div class="state-icon">⚠️</div>
         <div class="state-title">Đã xảy ra lỗi</div>
         <div class="state-desc">${escHtml(state.error)}</div>
-        <button class="btn btn-primary" style="margin-top:1.25rem" onclick="loadOrders()">Thử lại</button>
+        <button class="act-btn act-btn-primary" style="margin-top:1.25rem" onclick="loadOrders()">Thử lại</button>
       </div>`;
     return;
   }
 
   if (!state.orders.length) {
     el.innerHTML = `
-      <div class="state-empty">
+      <div class="state-box">
         <div class="state-icon">🛍️</div>
         <div class="state-title">Chưa có đơn hàng nào</div>
-        <div class="state-desc">Hãy khám phá bộ sưu tập mắt kính của chúng tôi</div>
-        <a href="/products" class="btn btn-primary" style="margin-top:1.25rem">Mua sắm ngay</a>
+        <div class="state-desc">Hãy khám phá bộ sưu tập kính mắt của chúng tôi</div>
+        <a href="Product.php" class="act-btn act-btn-primary" style="display:inline-block;margin-top:1.25rem;text-decoration:none">Mua sắm ngay</a>
       </div>`;
     return;
   }
 
-  el.innerHTML = `<div class="orders-list">${state.orders.map((o, i) => renderOrderCard(o, i)).join("")}</div>`;
+  el.innerHTML = `<div class="orders-list">${state.orders.map((o, i) => orderCardHtml(o, i)).join('')}</div>`;
 
-  // Toggle expand/collapse
-  el.querySelectorAll(".order-header").forEach((header) => {
-    header.addEventListener("click", () => {
-      header.closest(".order-card").classList.toggle("open");
-    });
+  el.querySelectorAll('.order-header').forEach(h => {
+    h.addEventListener('click', () => h.closest('.order-card').classList.toggle('open'));
   });
 }
 
-function renderOrderCard(order, idx) {
+function orderCardHtml(order, idx) {
   const badge = statusBadge(order.status);
-  const delay = idx * 60 + "ms";
-  const itemsHtml = order.items
-    .map(
-      (item) => `
+  const delay = (idx * 60) + 'ms';
+
+  const itemsHtml = (order.items || []).map(item => `
     <tr>
       <td>
         <div class="item-info">
-          <div class="item-thumb">${item.emoji || "👓"}</div>
-          <div>
-            <div class="item-name">${escHtml(item.name)}</div>
-            <div class="item-variant">${escHtml(item.variant || "")}</div>
+          <div class="item-thumb">
+            ${item.image
+              ? `<img src="${item.image}" alt="" style="width:100%;height:100%;object-fit:cover">`
+              : '👓'}
           </div>
+          <div><div class="item-name">${escHtml(item.name)}</div></div>
         </div>
       </td>
-      <td style="text-align:center;color:var(--text-secondary)">${item.qty}</td>
+      <td style="text-align:center;color:var(--muted)">${item.quantity}</td>
       <td style="text-align:right">${formatCurrency(item.price)}</td>
-      <td style="text-align:right;font-weight:500">${formatCurrency(item.price * item.qty)}</td>
-    </tr>`,
-    )
-    .join("");
+      <td style="text-align:right;font-weight:500">${formatCurrency(item.price * item.quantity)}</td>
+    </tr>`).join('');
+
+  const canCancel  = ['PENDING', 'CONFIRMED'].includes(order.status);
+  const canReorder = order.status === 'COMPLETED';
 
   return `
     <div class="order-card" style="animation-delay:${delay}">
       <div class="order-header">
         <div>
-          <div class="order-id">#${escHtml(order.orderId)}</div>
+          <div class="order-id">Mã đơn #${escHtml(String(order.orderId))}</div>
           <div class="order-date">${formatDate(order.createdAt)}</div>
         </div>
         <div class="order-meta">
-          <span class="badge ${badge.cls}">
-            <span class="badge-dot"></span>${badge.label}
-          </span>
+          <span class="badge ${badge.cls}"><span class="badge-dot"></span>${badge.label}</span>
           <span class="order-total">${formatCurrency(order.total)}</span>
-          <svg class="chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
           </svg>
         </div>
@@ -234,338 +165,142 @@ function renderOrderCard(order, idx) {
               <th style="text-align:right">Thành tiền</th>
             </tr>
           </thead>
-          <tbody>${itemsHtml}</tbody>
+          <tbody>${itemsHtml || '<tr><td colspan="4" style="color:var(--muted);padding:.75rem 0">Không có dữ liệu.</td></tr>'}</tbody>
         </table>
 
         <div class="order-summary">
-          <div class="order-address">
-            <strong>Địa chỉ giao hàng</strong>
-            ${escHtml(order.shippingAddress || "—")}
-          </div>
           <div class="totals">
-            <div class="totals-row"><span>Tạm tính</span><span>${formatCurrency(order.subtotal ?? order.total)}</span></div>
-            <div class="totals-row"><span>Phí vận chuyển</span><span>${order.shippingFee ? formatCurrency(order.shippingFee) : "Miễn phí"}</span></div>
-            ${order.discount ? `<div class="totals-row"><span>Giảm giá</span><span style="color:var(--success)">-${formatCurrency(order.discount)}</span></div>` : ""}
+            <div class="totals-row"><span>Tạm tính</span><span>${formatCurrency(order.total)}</span></div>
+            <div class="totals-row"><span>Phí vận chuyển</span><span>Miễn phí</span></div>
             <div class="totals-row grand"><span>Tổng cộng</span><span>${formatCurrency(order.total)}</span></div>
           </div>
         </div>
 
         <div class="detail-actions">
-          <button class="btn" onclick="printOrder('${order.orderId}')">🖨 In hoá đơn</button>
-          ${
-            order.status === "delivered"
-              ? `<button class="btn" onclick="reorder('${order.orderId}')">🔄 Mua lại</button>`
-              : ""
-          }
-          ${
-            order.status === "processing"
-              ? `<button class="btn" style="color:var(--danger);border-color:var(--danger)" onclick="cancelOrder('${order.orderId}')">Huỷ đơn</button>`
-              : ""
-          }
-          <a href="/orders/${order.orderId}" class="btn btn-primary">Chi tiết</a>
+          ${canReorder ? `<button class="act-btn" onclick="doReorder(${order.orderId})">🔄 Mua lại</button>` : ''}
+          ${canCancel  ? `<button class="act-btn act-btn-danger" onclick="doCancel(${order.orderId})">Huỷ đơn</button>` : ''}
         </div>
       </div>
     </div>`;
 }
 
 function renderPagination() {
-  const el = document.getElementById("pagination");
+  const el = document.getElementById('pagination');
+  if (!el) return;
   const { currentPage, totalPages } = state;
-  if (totalPages <= 1) {
-    el.innerHTML = "";
-    return;
-  }
 
-  let html = "";
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
 
-  // Prev
-  html += `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+  let html = '';
+  html += `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
   </button>`;
 
-  // Pages
   for (let p = 1; p <= totalPages; p++) {
-    if (
-      totalPages > 7 &&
-      Math.abs(p - currentPage) > 2 &&
-      p !== 1 &&
-      p !== totalPages
-    ) {
+    if (totalPages > 7 && Math.abs(p - currentPage) > 2 && p !== 1 && p !== totalPages) {
       if (p === 2 || p === totalPages - 1)
-        html += `<span style="padding:0 4px;color:var(--text-muted)">…</span>`;
+        html += `<span style="padding:0 4px;color:var(--muted)">…</span>`;
       continue;
     }
-    html += `<button class="page-btn ${p === currentPage ? "active" : ""}" onclick="goPage(${p})">${p}</button>`;
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
   }
 
-  // Next
-  html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? "disabled" : ""}>
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+  html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
   </button>`;
 
   el.innerHTML = html;
 }
 
-// ─── ACTIONS ───────────────────────────────────────────────────────────────
+// ── Actions ───────────────────────────────────────────────────────────────────
 
 function goPage(p) {
   if (p < 1 || p > state.totalPages) return;
-  state.currentPage = p;
-  applyLocalFilters();
-  renderContainer();
-  renderPagination();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  loadOrders(p);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function printOrder(orderId) {
-  // Mở trang in hoặc gọi API xuất PDF
-  window.open(`/api/orders/${orderId}/invoice`, "_blank");
+async function doCancel(orderId) {
+  if (!confirm('Bạn có chắc muốn huỷ đơn hàng này?')) return;
+  try {
+    const res  = await fetch(`/api/orders/${orderId}/cancel`, { method: 'PUT', credentials: 'include' });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('Đã huỷ đơn hàng.');
+      loadOrders(state.currentPage);
+    } else {
+      showToast(data.error || 'Không thể huỷ đơn.');
+    }
+  } catch { showToast('Lỗi kết nối.'); }
 }
 
-function reorder(orderId) {
-  // Thêm lại tất cả sản phẩm của đơn cũ vào giỏ hàng
-  fetch(`${API_BASE}/orders/${orderId}/reorder`, {
-    method: "POST",
-    credentials: "include",
-  })
-    .then((r) =>
-      r.ok
-        ? (window.location.href = "/cart")
-        : alert("Không thể tái đặt hàng."),
-    )
-    .catch(() => alert("Lỗi kết nối."));
+async function doReorder(orderId) {
+  try {
+    const res  = await fetch(`/api/orders/${orderId}/reorder`, { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('Đã thêm vào giỏ hàng!');
+      setTimeout(() => window.location.href = 'cart.php', 1000);
+    } else {
+      showToast(data.error || 'Không thể tái đặt hàng.');
+    }
+  } catch { showToast('Lỗi kết nối.'); }
 }
 
-function cancelOrder(orderId) {
-  if (!confirm("Bạn có chắc muốn huỷ đơn hàng này?")) return;
-  fetch(`${API_BASE}/orders/${orderId}/cancel`, {
-    method: "PUT",
-    credentials: "include",
-  })
-    .then((r) => {
-      if (r.ok) loadOrders(state.currentPage);
-      else alert("Không thể huỷ đơn hàng.");
-    })
-    .catch(() => alert("Lỗi kết nối."));
-}
+// ── Event listeners ───────────────────────────────────────────────────────────
 
-// ─── EVENT LISTENERS ───────────────────────────────────────────────────────
-
-document.getElementById("statusFilter").addEventListener("change", (e) => {
+document.getElementById('statusFilter')?.addEventListener('change', e => {
   state.filters.status = e.target.value;
-  state.currentPage = 1;
-  applyLocalFilters();
-  renderContainer();
-  renderPagination();
+  loadOrders(1);
 });
 
-document.getElementById("sortFilter").addEventListener("change", (e) => {
+document.getElementById('sortFilter')?.addEventListener('change', e => {
   state.filters.sort = e.target.value;
-  state.currentPage = 1;
-  applyLocalFilters();
-  renderContainer();
-  renderPagination();
+  loadOrders(1);
 });
 
-let searchDebounce;
-document.getElementById("searchInput").addEventListener("input", (e) => {
-  clearTimeout(searchDebounce);
-  searchDebounce = setTimeout(() => {
+let searchTimer;
+document.getElementById('searchInput')?.addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
     state.filters.search = e.target.value.trim();
-    state.currentPage = 1;
-    applyLocalFilters();
+    applySearchFilter();
     renderContainer();
     renderPagination();
   }, 300);
 });
 
-// ─── UTILS ─────────────────────────────────────────────────────────────────
+// ── Utils ─────────────────────────────────────────────────────────────────────
 
 function formatCurrency(n) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(n);
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
 }
 
 function formatDate(iso) {
-  return new Date(iso).toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 function statusBadge(status) {
   const map = {
-    COMPLETED: { cls: "badge-success", label: "Hoàn thành" },
-    SHIPPED: { cls: "badge-accent", label: "Đang giao" },
-    CONFIRMED: { cls: "badge-warning", label: "Đã xác nhận" },
-    CANCELLED: { cls: "badge-danger", label: "Đã huỷ" },
-    PENDING: { cls: "badge-gray", label: "Chờ xử lý" },
+    COMPLETED: { cls: 'badge-success', label: 'Hoàn thành' },
+    SHIPPED:   { cls: 'badge-accent',  label: 'Đang giao'  },
+    CONFIRMED: { cls: 'badge-warning', label: 'Đã xác nhận'},
+    CANCELLED: { cls: 'badge-danger',  label: 'Đã huỷ'     },
+    PENDING:   { cls: 'badge-gray',    label: 'Chờ xử lý'  },
   };
-  return map[status] || { cls: "badge-gray", label: status };
+  return map[status] || { cls: 'badge-gray', label: status };
 }
 
-function setText(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
-}
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
 function escHtml(str) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return String(str ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+// showToast được định nghĩa trong main.js
 
-// ─── MOCK DATA ─────────────────────────────────────────────────────────────
-
-function getMockData() {
-  return {
-    content: [
-      {
-        orderId: "OPT-2024-0892",
-        createdAt: "2024-11-20T10:30:00",
-        status: "delivered",
-        total: 2850000,
-        subtotal: 2850000,
-        shippingFee: 0,
-        discount: 150000,
-        shippingAddress: "123 Nguyễn Huệ, P. Bến Nghé, Q.1, TP.HCM",
-        items: [
-          {
-            name: "Ray-Ban Aviator Classic",
-            variant: "Gọng vàng / Tròng khói",
-            qty: 1,
-            price: 2200000,
-            emoji: "🕶️",
-          },
-          {
-            name: "Dung dịch vệ sinh mắt kính",
-            variant: "100ml",
-            qty: 2,
-            price: 150000,
-            emoji: "🧴",
-          },
-        ],
-      },
-      {
-        orderId: "OPT-2024-0851",
-        createdAt: "2024-10-08T14:15:00",
-        status: "shipping",
-        total: 1590000,
-        subtotal: 1590000,
-        shippingFee: 30000,
-        shippingAddress: "45 Lê Lợi, P. Bến Thành, Q.1, TP.HCM",
-        items: [
-          {
-            name: "Oakley Holbrook",
-            variant: "Gọng đen / Tròng đỏ",
-            qty: 1,
-            price: 1560000,
-            emoji: "😎",
-          },
-        ],
-      },
-      {
-        orderId: "OPT-2024-0790",
-        createdAt: "2024-09-15T09:00:00",
-        status: "delivered",
-        total: 4500000,
-        subtotal: 4700000,
-        shippingFee: 0,
-        discount: 200000,
-        shippingAddress: "78 Trần Hưng Đạo, Q.5, TP.HCM",
-        items: [
-          {
-            name: "Tom Ford FT0237",
-            variant: "Gọng vàng rose / Tròng gradient",
-            qty: 1,
-            price: 4500000,
-            emoji: "👓",
-          },
-        ],
-      },
-      {
-        orderId: "OPT-2024-0712",
-        createdAt: "2024-08-02T16:45:00",
-        status: "processing",
-        total: 980000,
-        subtotal: 980000,
-        shippingFee: 30000,
-        shippingAddress: "10 Phạm Văn Đồng, Bình Thạnh, TP.HCM",
-        items: [
-          {
-            name: "Warby Parker Haskell",
-            variant: "Gọng tortoise / Tròng trong",
-            qty: 1,
-            price: 950000,
-            emoji: "🤓",
-          },
-        ],
-      },
-      {
-        orderId: "OPT-2024-0644",
-        createdAt: "2024-07-19T11:20:00",
-        status: "cancelled",
-        total: 3200000,
-        subtotal: 3200000,
-        shippingFee: 0,
-        shippingAddress: "200 Nguyễn Văn Cừ, Q.5, TP.HCM",
-        items: [
-          {
-            name: "Persol PO3152S",
-            variant: "Gọng xanh havana / Tròng xanh",
-            qty: 1,
-            price: 3200000,
-            emoji: "🕶️",
-          },
-        ],
-      },
-      {
-        orderId: "OPT-2024-0601",
-        createdAt: "2024-06-05T08:00:00",
-        status: "delivered",
-        total: 720000,
-        subtotal: 720000,
-        shippingFee: 0,
-        shippingAddress: "33 Bùi Thị Xuân, Q. Tân Bình, TP.HCM",
-        items: [
-          {
-            name: "Hộp đựng mắt kính cao cấp",
-            variant: "Màu nâu da",
-            qty: 2,
-            price: 250000,
-            emoji: "📦",
-          },
-          {
-            name: "Khăn lau mắt kính microfiber",
-            variant: "Set 5 cái",
-            qty: 1,
-            price: 120000,
-            emoji: "🧤",
-          },
-          {
-            name: "Xịt vệ sinh chống bụi",
-            variant: "150ml",
-            qty: 1,
-            price: 100000,
-            emoji: "🧴",
-          },
-        ],
-      },
-    ],
-    totalPages: 2,
-    totalElements: 6,
-  };
-}
-
-// ─── INIT ──────────────────────────────────────────────────────────────────
-
+// ── Init ──────────────────────────────────────────────────────────────────────
 loadOrders(1);

@@ -1,3 +1,5 @@
+// frontend/assets/js/main.js
+
 /* =============================
    NAVBAR — scroll shadow
    ============================= */
@@ -35,51 +37,15 @@ function animateCounter(el) {
 
 const statsSection = document.querySelector('.stats');
 if (statsSection) {
-  new IntersectionObserver((entries) => {
+  const statsObserver = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
         e.target.querySelectorAll('.stat-num[data-target]').forEach(animateCounter);
         statsObserver.unobserve(e.target);
       }
     });
-  }, { threshold: 0.4 }).observe(statsSection);
-}
-// alias để IntersectionObserver có thể unobserve
-const statsObserver = new IntersectionObserver(() => {});
-
-/* =============================
-   CART (localStorage)
-   ============================= */
-function getCart() {
-  return JSON.parse(localStorage.getItem('cart') || '[]');
-}
-
-function saveCart(cart) {
-  localStorage.setItem('cart', JSON.stringify(cart));
-  updateCartCount();
-}
-
-function updateCartCount() {
-  const count = getCart().reduce((s, i) => s + i.qty, 0);
-  document.querySelectorAll('#cartCount').forEach(el => el.textContent = count);
-}
-
-function addToCart(btn, id, name, price) {
-  const cart = getCart();
-  const idx  = cart.findIndex(i => i.id === id);
-  if (idx > -1) cart[idx].qty++;
-  else cart.push({ id, name, price: parseFloat(price), qty: 1 });
-  saveCart(cart);
-  showToast('Đã thêm vào giỏ hàng!');
-
-  btn.textContent = '✓ Đã thêm';
-  btn.style.background = 'var(--ink)';
-  btn.style.color = 'var(--cream)';
-  setTimeout(() => {
-    btn.textContent = btn.closest('.prod-card')?.dataset.type === 'preorder' ? 'Đặt trước' : 'Thêm vào giỏ';
-    btn.style.background = '';
-    btn.style.color = '';
-  }, 2000);
+  }, { threshold: 0.4 });
+  statsObserver.observe(statsSection);
 }
 
 /* =============================
@@ -96,7 +62,7 @@ function showToast(msg) {
 }
 
 /* =============================
-   PRODUCT FILTER
+   PRODUCT FILTER (home / product page)
    ============================= */
 document.addEventListener('click', e => {
   if (!e.target.classList.contains('filter-btn')) return;
@@ -111,9 +77,9 @@ document.addEventListener('click', e => {
 /* =============================
    LOGIN MODAL
    ============================= */
-const loginModal   = document.getElementById('loginModal');
-const openLoginBtn = document.getElementById('openLoginBtn');
-const closeLoginBtn= document.getElementById('closeLoginBtn');
+const loginModal    = document.getElementById('loginModal');
+const openLoginBtn  = document.getElementById('openLoginBtn');
+const closeLoginBtn = document.getElementById('closeLoginBtn');
 
 if (openLoginBtn && loginModal) {
   openLoginBtn.addEventListener('click', () => loginModal.classList.add('show'));
@@ -128,16 +94,28 @@ if (loginModal) {
 }
 
 function switchModal(panel) {
-  document.getElementById('formSignin').style.display = panel === 'signin' ? '' : 'none';
-  document.getElementById('formSignup').style.display = panel === 'signup' ? '' : 'none';
+  const signin = document.getElementById('formSignin');
+  const signup = document.getElementById('formSignup');
+  if (signin) signin.style.display = panel === 'signin' ? '' : 'none';
+  if (signup) signup.style.display = panel === 'signup' ? '' : 'none';
 }
 
-// Auto-open modal nếu có lỗi login/signup trong URL
-if (loginModal && (location.search.includes('login_error') || location.search.includes('signup_error') || location.search.includes('signup_success'))) {
-  loginModal.classList.add('show');
-  if (location.search.includes('signup_error') || location.search.includes('signup_success')) {
-    switchModal('signup');
+// Auto-open modal nếu có lỗi/success trong URL
+if (loginModal) {
+  const s = location.search;
+  if (s.includes('login_error') || s.includes('signup_error') || s.includes('signup_success')) {
+    loginModal.classList.add('show');
+    if (s.includes('signup_error') || s.includes('signup_success')) switchModal('signup');
   }
+}
+
+/* =============================
+   addToCart placeholder
+   (bị override bởi cart.js nếu được load)
+   ============================= */
+function addToCart(btn, productId, name, price) {
+  // Fallback: mở modal đăng nhập nếu cart.js chưa load
+  showToast('Đang xử lý…');
 }
 
 /* =============================
@@ -148,22 +126,24 @@ function initFadeObserver() {
   const obs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
-        e.target.style.opacity = '1';
-        e.target.style.transform = 'translateY(0)';
+        e.target.style.opacity    = '1';
+        e.target.style.transform  = 'translateY(0)';
         obs.unobserve(e.target);
       }
     });
   }, { threshold: 0.1 });
 
   els.forEach((el, i) => {
-    el.style.opacity = '0';
+    el.style.opacity   = '0';
     el.style.transform = 'translateY(16px)';
     el.style.transition = `opacity 0.5s ease ${(i % 4) * 0.1}s, transform 0.5s ease ${(i % 4) * 0.1}s`;
     obs.observe(el);
   });
 }
 
+/* =============================
+   INIT
+   ============================= */
 document.addEventListener('DOMContentLoaded', () => {
-  updateCartCount();
   initFadeObserver();
 });

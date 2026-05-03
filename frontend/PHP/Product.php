@@ -130,7 +130,7 @@ $pageTitle  = isset($validCats[$category]) ? $validCats[$category] : 'Tất cả
       </form>
       <p class="modal-switch">Chưa có tài khoản? <span onclick="switchModal('signup')">Đăng ký</span></p>
     </div>
-    <div class="modal-form" id="formSignup" style="display:none">
+        <div class="modal-form" id="formSignup" style="display:none">
       <h2>Tạo tài khoản</h2>
       <form action="sign_up.php" method="POST">
         <input type="text"  name="name"     placeholder="Họ tên" required />
@@ -155,9 +155,7 @@ $pageTitle  = isset($validCats[$category]) ? $validCats[$category] : 'Tất cả
   const category = <?= json_encode($category) ?>;
 
   try {
-    const url = category ? `/api/products?category=${category}` : '/api/products';
-    const res  = await fetch(url, { credentials: 'include' });
-    const json = await res.json();
+    const json = await fetchProducts(category);
     const products = json.data || [];
 
     if (!products.length) {

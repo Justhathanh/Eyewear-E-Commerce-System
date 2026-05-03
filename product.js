@@ -4,7 +4,7 @@ async function loadProducts() {
     container.innerHTML = "<p>Đang tải sản phẩm...</p>";
 
     try {
-        const response = await fetch("api.php");
+        const response = await fetch("/api/products");
 
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
@@ -12,7 +12,7 @@ async function loadProducts() {
 
         const result = await response.json();
 
-        if (!result.success) {
+        if (result.status !== "success" || !Array.isArray(result.data)) {
             throw new Error(result.message || "Lỗi server");
         }
 
@@ -25,6 +25,7 @@ async function loadProducts() {
         }
 
         products.forEach(p => {
+            const productId = p.product_id ?? p.id;
             const price = parseInt(p.price || 0).toLocaleString('vi-VN');
             
             container.innerHTML += `
@@ -32,7 +33,7 @@ async function loadProducts() {
                     <img src="${p.image || 'https://via.placeholder.com/300x200?text=No+Image'}" alt="${p.name}">
                     <h3>${p.name}</h3>
                     <p class="price">${price} VND</p>
-                    <button onclick="addToCart(${p.id})">Thêm vào giỏ</button>
+                    <button onclick="addToCart(${productId})">Thêm vào giỏ</button>
                 </div>
             `;
         });

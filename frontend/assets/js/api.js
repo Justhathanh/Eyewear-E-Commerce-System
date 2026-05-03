@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = 'http://localhost:9090/api';
 
 // ── Fetch helper ─────────────────────────────────────────────
 async function apiFetch(endpoint, options = {}) {
@@ -12,8 +12,9 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 // ── Products ─────────────────────────────────────────────────
-async function fetchProducts() {
-  return apiFetch('/products');
+async function fetchProducts(category = '') {
+  const qs = category ? `?category=${encodeURIComponent(category)}` : '';
+  return apiFetch(`/products${qs}`);
 }
 
 // ── Orders ───────────────────────────────────────────────────
@@ -39,21 +40,7 @@ function renderProductCard(p) {
 
   return `
     <div class="prod-card" data-type="${type}" data-id="${p.product_id}">
-      <div class="prod-img">
-        ${p.image
-          ? `<img src="${p.image}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover">`
-          : `<svg viewBox="0 0 160 80" width="140" height="70"><rect x="8" y="12" width="60" height="50" rx="12" fill="none" stroke="#1a1410" stroke-width="3"/><rect x="92" y="12" width="60" height="50" rx="12" fill="none" stroke="#1a1410" stroke-width="3"/><path d="M68 34 Q80 28 92 34" stroke="#1a1410" stroke-width="2.5" fill="none"/><rect x="14" y="18" width="48" height="38" rx="8" fill="#e8e0d0" opacity="0.6"/><rect x="98" y="18" width="48" height="38" rx="8" fill="#e8e0d0" opacity="0.6"/></svg>`
-        }
-      </div>
-      <div class="prod-info">
-        <div class="prod-brand">Vista Optic</div>
-        <div class="prod-name">${p.name}</div>
-        <div class="prod-bottom">
-          <span class="prod-price">${price}</span>
-          <span class="${tagClass}">${tagLabel}</span>
-        </div>
-        <button class="add-to-cart" onclick="addToCart(this, ${p.product_id}, '${p.name}', ${p.price})">
-          ${type === 'preorder' ? 'Đặt trước' : 'Thêm vào giỏ'}
+@@ -57,26 +58,26 @@ function renderProductCard(p) {
         </button>
       </div>
     </div>`;
