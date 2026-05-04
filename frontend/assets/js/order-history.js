@@ -1,5 +1,6 @@
 // frontend/assets/js/order-history.js
 
+const API_BASE  = 'http://localhost:9090/api';
 const PAGE_SIZE = 5;
 
 let state = {
@@ -12,14 +13,14 @@ let state = {
   filters: { status: '', search: '', sort: 'newest' },
 };
 
-// ── API ───────────────────────────────────────────────────────────────────────
+// ── API ───────────────────────────────────────────────────────
 
 async function fetchOrdersFromAPI(page = 0) {
   const { status, sort } = state.filters;
   const params = new URLSearchParams({ page, size: PAGE_SIZE, sort });
   if (status) params.set('status', status);
 
-  const res = await fetch(`/api/orders/history?${params}`, { credentials: 'include' });
+  const res = await fetch(`${API_BASE}/orders/history?${params}`, { credentials: 'include' });
 
   if (res.status === 401) throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
   if (!res.ok)            throw new Error(`Lỗi máy chủ (${res.status}). Vui lòng thử lại.`);
@@ -27,7 +28,7 @@ async function fetchOrdersFromAPI(page = 0) {
   return res.json();
 }
 
-// ── Load ──────────────────────────────────────────────────────────────────────
+// ── Load ──────────────────────────────────────────────────────
 
 async function loadOrders(page = 1) {
   state.loading = true;
@@ -35,7 +36,7 @@ async function loadOrders(page = 1) {
   renderContainer();
 
   try {
-    const data = await fetchOrdersFromAPI(page - 1);  // API: 0-based
+    const data = await fetchOrdersFromAPI(page - 1);
 
     state.allOrders   = data.content ?? [];
     state.totalPages  = data.totalPages ?? 1;
@@ -53,7 +54,7 @@ async function loadOrders(page = 1) {
   state.loading = false;
 }
 
-// ── Client-side search (server handles status/sort) ───────────────────────────
+// ── Client-side search ────────────────────────────────────────
 
 function applySearchFilter() {
   const q = state.filters.search.toLowerCase();
@@ -65,11 +66,11 @@ function applySearchFilter() {
   );
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────
 
 function renderStats() {
-  const all  = state.allOrders;
-  const done = all.filter(o => o.status === 'COMPLETED').length;
+  const all   = state.allOrders;
+  const done  = all.filter(o => o.status === 'COMPLETED').length;
   const spend = all.reduce((s, o) => s + (o.total || 0), 0);
 
   setText('statTotal', all.length);
@@ -82,7 +83,11 @@ function renderContainer() {
   if (!el) return;
 
   if (state.loading) {
-    el.innerHTML = `<div class="state-box"><div class="spinner"></div><div class="state-title">Đang tải đơn hàng…</div></div>`;
+    el.innerHTML = `
+      <div class="state-box">
+        <div class="spinner"></div>
+        <div class="state-title">Đang tải đơn hàng…</div>
+      </div>`;
     return;
   }
 
@@ -119,25 +124,29 @@ function orderCardHtml(order, idx) {
   const badge = statusBadge(order.status);
   const delay = (idx * 60) + 'ms';
 
-  const itemsHtml = (order.items || []).map(item => `
-    <tr>
-      <td>
-        <div class="item-info">
-          <div class="item-thumb">
-            ${item.image
-              ? `<img src="${item.image}" alt="" style="width:100%;height:100%;object-fit:cover">`
-              : '👓'}
+  const itemsHtml = (order.items || []).map(item => {
+    const thumbInner = item.image
+      ? `<img src="${item.image}" alt="" style="width:100%;height:100%;object-fit:cover">`
+      : `<span style="font-size:1.4rem">👓</span>`;
+    return `
+      <tr>
+        <td>
+          <div class="item-info">
+            <div class="item-thumb">${thumbInner}</div>
+            <div><div class="item-name">${escHtml(item.name)}</div></div>
           </div>
-          <div><div class="item-name">${escHtml(item.name)}</div></div>
-        </div>
-      </td>
-      <td style="text-align:center;color:var(--muted)">${item.quantity}</td>
-      <td style="text-align:right">${formatCurrency(item.price)}</td>
-      <td style="text-align:right;font-weight:500">${formatCurrency(item.price * item.quantity)}</td>
-    </tr>`).join('');
+        </td>
+        <td style="text-align:center;color:var(--muted)">${item.quantity}</td>
+        <td style="text-align:right">${formatCurrency(item.price)}</td>
+        <td style="text-align:right;font-weight:500">${formatCurrency(item.price * item.quantity)}</td>
+      </tr>`;
+  }).join('');
 
   const canCancel  = ['PENDING', 'CONFIRMED'].includes(order.status);
   const canReorder = order.status === 'COMPLETED';
+
+  // Badge thanh toán
+  const payBadge = paymentBadge(order.paymentMethod, order.paymentStatus);
 
   return `
     <div class="order-card" style="animation-delay:${delay}">
@@ -148,6 +157,7 @@ function orderCardHtml(order, idx) {
         </div>
         <div class="order-meta">
           <span class="badge ${badge.cls}"><span class="badge-dot"></span>${badge.label}</span>
+          ${payBadge ? `<span class="badge ${payBadge.cls}" style="font-size:.65rem">${payBadge.icon} ${payBadge.label}</span>` : ''}
           <span class="order-total">${formatCurrency(order.total)}</span>
           <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
@@ -165,7 +175,9 @@ function orderCardHtml(order, idx) {
               <th style="text-align:right">Thành tiền</th>
             </tr>
           </thead>
-          <tbody>${itemsHtml || '<tr><td colspan="4" style="color:var(--muted);padding:.75rem 0">Không có dữ liệu.</td></tr>'}</tbody>
+          <tbody>
+            ${itemsHtml || '<tr><td colspan="4" style="color:var(--muted);padding:.75rem 0">Không có dữ liệu.</td></tr>'}
+          </tbody>
         </table>
 
         <div class="order-summary">
@@ -191,8 +203,7 @@ function renderPagination() {
 
   if (totalPages <= 1) { el.innerHTML = ''; return; }
 
-  let html = '';
-  html += `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+  let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
   </button>`;
 
@@ -212,7 +223,7 @@ function renderPagination() {
   el.innerHTML = html;
 }
 
-// ── Actions ───────────────────────────────────────────────────────────────────
+// ── Actions ───────────────────────────────────────────────────
 
 function goPage(p) {
   if (p < 1 || p > state.totalPages) return;
@@ -223,7 +234,7 @@ function goPage(p) {
 async function doCancel(orderId) {
   if (!confirm('Bạn có chắc muốn huỷ đơn hàng này?')) return;
   try {
-    const res  = await fetch(`/api/orders/${orderId}/cancel`, { method: 'PUT', credentials: 'include' });
+    const res  = await fetch(`${API_BASE}/orders/${orderId}/cancel`, { method: 'PUT', credentials: 'include' });
     const data = await res.json();
     if (res.ok) {
       showToast('Đã huỷ đơn hàng.');
@@ -236,7 +247,7 @@ async function doCancel(orderId) {
 
 async function doReorder(orderId) {
   try {
-    const res  = await fetch(`/api/orders/${orderId}/reorder`, { method: 'POST', credentials: 'include' });
+    const res  = await fetch(`${API_BASE}/orders/${orderId}/reorder`, { method: 'POST', credentials: 'include' });
     const data = await res.json();
     if (res.ok) {
       showToast('Đã thêm vào giỏ hàng!');
@@ -247,7 +258,7 @@ async function doReorder(orderId) {
   } catch { showToast('Lỗi kết nối.'); }
 }
 
-// ── Event listeners ───────────────────────────────────────────────────────────
+// ── Event listeners ───────────────────────────────────────────
 
 document.getElementById('statusFilter')?.addEventListener('change', e => {
   state.filters.status = e.target.value;
@@ -270,7 +281,7 @@ document.getElementById('searchInput')?.addEventListener('input', e => {
   }, 300);
 });
 
-// ── Utils ─────────────────────────────────────────────────────────────────────
+// ── Utils ─────────────────────────────────────────────────────
 
 function formatCurrency(n) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
@@ -283,13 +294,21 @@ function formatDate(iso) {
 
 function statusBadge(status) {
   const map = {
-    COMPLETED: { cls: 'badge-success', label: 'Hoàn thành' },
-    SHIPPED:   { cls: 'badge-accent',  label: 'Đang giao'  },
-    CONFIRMED: { cls: 'badge-warning', label: 'Đã xác nhận'},
-    CANCELLED: { cls: 'badge-danger',  label: 'Đã huỷ'     },
-    PENDING:   { cls: 'badge-gray',    label: 'Chờ xử lý'  },
+    COMPLETED: { cls: 'badge-success', label: 'Hoàn thành'   },
+    SHIPPED:   { cls: 'badge-accent',  label: 'Đang giao'    },
+    CONFIRMED: { cls: 'badge-warning', label: 'Đã xác nhận'  },
+    CANCELLED: { cls: 'badge-danger',  label: 'Đã huỷ'       },
+    PENDING:   { cls: 'badge-gray',    label: 'Chờ xử lý'    },
   };
   return map[status] || { cls: 'badge-gray', label: status };
+}
+
+function paymentBadge(method, pStatus) {
+  if (!method) return null;
+  const icons  = { CASH: '💵', BANK: '🏦', MOMO: '📱' };
+  const labels = { CASH: 'COD', BANK: 'Chuyển khoản', MOMO: 'MoMo' };
+  const cls    = pStatus === 'PAID' ? 'badge-success' : 'badge-gray';
+  return { cls, icon: icons[method] || '', label: labels[method] || method };
 }
 
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
@@ -300,7 +319,5 @@ function escHtml(str) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// showToast được định nghĩa trong main.js
-
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────
 loadOrders(1);

@@ -1,9 +1,8 @@
 // frontend/assets/js/cart.js
-// Giỏ hàng dùng API session PHP — không dùng localStorage
 
-const CART_API = '/api/cart';
+const CART_API = 'http://localhost:9090/api/cart';
 
-// ── Load & render giỏ hàng ───────────────────────────────────────────────────
+// ── Load & render ────────────────────────────────────────────
 
 async function loadCart() {
   const container = document.getElementById('cartContent');
@@ -12,10 +11,9 @@ async function loadCart() {
   container.innerHTML = `<div style="text-align:center;padding:3rem"><span class="spinner-inline"></span></div>`;
 
   try {
-    const res  = await fetch(CART_API, { credentials: 'include' });
+    const res = await fetch(CART_API, { credentials: 'include' });
 
     if (res.status === 401) {
-      // Đã login ở PHP nhưng session API chưa sync — không xảy ra trong flow chuẩn
       container.innerHTML = renderEmpty('Vui lòng đăng nhập lại.');
       return;
     }
@@ -35,7 +33,7 @@ async function loadCart() {
       <table class="cart-table">
         <thead>
           <tr>
-            <th style="width:55%">Sản phẩm</th>
+            <th style="width:50%">Sản phẩm</th>
             <th>Đơn giá</th>
             <th>Số lượng</th>
             <th style="text-align:right">Thành tiền</th>
@@ -48,8 +46,9 @@ async function loadCart() {
       </table>`;
 
     enableCheckout();
-  } catch {
-    container.innerHTML = `<p style="color:#c0392b;padding:2rem 0">Không thể tải giỏ hàng.</p>`;
+  } catch (err) {
+    console.error('[cart] loadCart error:', err);
+    container.innerHTML = `<p style="color:#c0392b;padding:2rem 0">Không thể tải giỏ hàng. (${err.message})</p>`;
   }
 }
 
@@ -57,7 +56,7 @@ function cartRowHtml(item) {
   const price = parseInt(item.price).toLocaleString('vi-VN') + ' ₫';
   const total = (item.price * item.quantity).toLocaleString('vi-VN') + ' ₫';
   const thumb = item.image
-    ? `<img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover">`
+    ? `<img src="${item.image}" alt="${escHtml(item.name)}" style="width:100%;height:100%;object-fit:cover">`
     : `<svg viewBox="0 0 160 80" width="56" height="28"><rect x="8" y="12" width="60" height="50" rx="12" fill="none" stroke="#1a1410" stroke-width="3"/><rect x="92" y="12" width="60" height="50" rx="12" fill="none" stroke="#1a1410" stroke-width="3"/><path d="M68 34 Q80 28 92 34" stroke="#1a1410" stroke-width="2.5" fill="none"/></svg>`;
 
   return `
@@ -67,7 +66,7 @@ function cartRowHtml(item) {
           <div class="item-thumb">${thumb}</div>
           <div>
             <div class="item-name">${escHtml(item.name)}</div>
-            <div class="item-cat">${item.category || ''}</div>
+            <div class="item-cat">${escHtml(item.category || '')}</div>
           </div>
         </div>
       </td>
@@ -95,7 +94,7 @@ function renderEmpty(msg = 'Giỏ hàng của bạn đang trống.') {
     </div>`;
 }
 
-// ── Summary sidebar ───────────────────────────────────────────────────────────
+// ── Summary ──────────────────────────────────────────────────
 
 function updateSummary(total, items) {
   const fmt   = parseInt(total).toLocaleString('vi-VN') + ' ₫';
@@ -112,7 +111,7 @@ function updateSummary(total, items) {
 function enableCheckout()  { const b = document.getElementById('checkoutBtn'); if (b) b.disabled = false; }
 function disableCheckout() { const b = document.getElementById('checkoutBtn'); if (b) b.disabled = true;  }
 
-// ── Actions ───────────────────────────────────────────────────────────────────
+// ── Qty / Remove ─────────────────────────────────────────────
 
 async function changeQty(cartId, newQty) {
   if (newQty < 1) { removeItem(cartId); return; }
@@ -138,14 +137,15 @@ async function removeItem(cartId) {
   } catch { showToast('Lỗi kết nối.'); }
 }
 
+// ── Checkout ─────────────────────────────────────────────────
+
 async function checkout() {
   const btn = document.getElementById('checkoutBtn');
   if (!btn) return;
-  btn.disabled   = true;
+  btn.disabled    = true;
   btn.textContent = 'Đang xử lý…';
 
   try {
-    // Lấy cart để tạo payload
     const cartRes  = await fetch(CART_API, { credentials: 'include' });
     const cartData = await cartRes.json();
     const items    = (cartData.items || []).map(i => ({
@@ -160,7 +160,7 @@ async function checkout() {
       return;
     }
 
-    const res  = await fetch('/api/orders', {
+    const res  = await fetch('http://localhost:9090/api/orders', {
       method:      'POST',
       headers:     { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -184,8 +184,7 @@ async function checkout() {
   }
 }
 
-// ── Global addToCart (override main.js) ──────────────────────────────────────
-// Gọi từ các trang sản phẩm — dùng API thay localStorage
+// ── addToCart (gọi từ trang sản phẩm) ───────────────────────
 
 async function addToCart(btn, productId, name, price) {
   if (!productId) return;
@@ -231,28 +230,29 @@ async function addToCart(btn, productId, name, price) {
   }
 }
 
-// Cập nhật số đếm giỏ trên navbar
+// ── Sync cart count trên navbar ──────────────────────────────
+
 async function syncCartCount() {
   try {
     const res  = await fetch(CART_API, { credentials: 'include' });
     if (!res.ok) return;
-    const data = await res.json();
+    const data  = await res.json();
     const count = (data.items || []).reduce((s, i) => s + i.quantity, 0);
     document.querySelectorAll('#cartCount').forEach(el => el.textContent = count);
   } catch {}
 }
 
-// ── Utils ─────────────────────────────────────────────────────────────────────
+// ── Utils ─────────────────────────────────────────────────────
+
 function escHtml(str) {
   return String(str ?? '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Chỉ load giỏ trên trang cart
   if (document.getElementById('cartContent')) loadCart();
-  // Luôn sync số đếm trên navbar
   syncCartCount();
 });

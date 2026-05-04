@@ -3,7 +3,6 @@
 
 $request = explode("?", $_SERVER['REQUEST_URI'])[0];
 $request = str_replace("/index.php", "", $request);
-// Docker mount backend tại /var/www/html/api → strip prefix /api
 $request = preg_replace('#^/api#', '', $request) ?: '/';
 $method  = $_SERVER['REQUEST_METHOD'];
 
@@ -90,13 +89,15 @@ elseif (preg_match('#^/orders/([^/]+)$#', $request, $m) && $method === 'GET') {
     (new OrderController())->getDetail($m[1]);
 }
 
+// ── Payments ─────────────────────────────────────────────────
+elseif ($request === '/payments' && $method === 'POST') {
+    require_once __DIR__ . '/../controllers/PaymentController.php';
+    (new PaymentController())->create();
+}
+
 // ── 404 ──────────────────────────────────────────────────────
 else {
     http_response_code(404);
     header('Content-Type: application/json');
-    echo json_encode([
-        'error'   => 'Route not found',
-        'request' => $request,
-        'method'  => $method,
-    ]);
+    echo json_encode(['error' => 'Route not found', 'request' => $request, 'method' => $method]);
 }

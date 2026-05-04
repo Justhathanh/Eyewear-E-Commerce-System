@@ -13,7 +13,7 @@ $userName   = $_SESSION['name'] ?? '';
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
-    .cart-page { max-width: 960px; margin: 3rem auto; padding: 0 2rem; }
+    .cart-page { max-width: 1100px; margin: 3rem auto; padding: 0 2rem; }
 
     .cart-title {
       font-family: 'Cormorant Garamond', serif; font-size: 2rem;
@@ -26,6 +26,17 @@ $userName   = $_SESSION['name'] ?? '';
       border: .5px solid var(--border); background: var(--surface);
     }
     .auth-gate p { color: var(--muted); margin: 1rem 0 1.5rem; }
+
+    /* Main layout: table + summary */
+    .cart-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media (max-width: 768px) {
+      .cart-layout { grid-template-columns: 1fr; }
+    }
 
     /* Cart table */
     .cart-table { width: 100%; border-collapse: collapse; }
@@ -41,10 +52,12 @@ $userName   = $_SESSION['name'] ?? '';
     .cart-table tr:last-child td { border-bottom: none; }
 
     .item-thumb {
-      width: 64px; height: 64px; background: var(--surface);
+      width: 72px; height: 72px; background: var(--surface);
       display: flex; align-items: center; justify-content: center;
       border: .5px solid var(--border); margin-right: .75rem; flex-shrink: 0;
+      overflow: hidden;
     }
+    .item-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .item-cell { display: flex; align-items: center; }
     .item-name { font-weight: 500; color: var(--ink); }
     .item-cat  { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
@@ -66,11 +79,16 @@ $userName   = $_SESSION['name'] ?? '';
     }
     .remove-btn:hover { color: #c0392b; }
 
-    /* Summary */
-    .cart-footer { display: flex; justify-content: flex-end; margin-top: 2rem; }
+    /* Summary sidebar */
     .cart-summary {
-      width: 320px; border: .5px solid var(--border);
+      border: .5px solid var(--border);
       background: var(--surface); padding: 1.5rem;
+      position: sticky; top: 90px;
+    }
+    .summary-title {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.3rem;
+      font-weight: 300; margin-bottom: 1.25rem;
+      padding-bottom: .75rem; border-bottom: .5px solid var(--border);
     }
     .summary-row {
       display: flex; justify-content: space-between;
@@ -80,6 +98,10 @@ $userName   = $_SESSION['name'] ?? '';
       border-top: .5px solid var(--border); margin-top: .5rem; padding-top: .8rem;
       font-size: 1rem; color: var(--ink); font-weight: 500;
     }
+    .summary-row.total .val {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.2rem;
+    }
+
     .checkout-btn {
       width: 100%; margin-top: 1.25rem; padding: .9rem;
       background: var(--ink); color: var(--cream);
@@ -90,12 +112,18 @@ $userName   = $_SESSION['name'] ?? '';
     .checkout-btn:hover:not(:disabled) { background: var(--gold); }
     .checkout-btn:disabled { opacity: .5; cursor: not-allowed; }
 
+    .continue-link {
+      display: block; text-align: center; margin-top: .75rem;
+      font-size: .75rem; color: var(--muted); text-decoration: none;
+      letter-spacing: .06em; text-transform: uppercase; transition: color .2s;
+    }
+    .continue-link:hover { color: var(--ink); }
+
     /* Empty state */
     .cart-empty {
       text-align: center; padding: 4rem;
       border: .5px solid var(--border); background: var(--surface);
     }
-    .cart-empty svg { width: 48px; height: 48px; color: var(--muted); margin-bottom: 1rem; }
     .cart-empty p { color: var(--muted); margin: .5rem 0 1.5rem; font-size: .9rem; }
 
     .spinner-inline {
@@ -142,7 +170,6 @@ $userName   = $_SESSION['name'] ?? '';
   <h1 class="cart-title">Giỏ hàng của bạn</h1>
 
   <?php if (!$isLoggedIn): ?>
-  <!-- Not logged in -->
   <div class="auth-gate">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;color:var(--muted);margin:0 auto;display:block"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
     <p>Đăng nhập để xem giỏ hàng của bạn</p>
@@ -150,9 +177,37 @@ $userName   = $_SESSION['name'] ?? '';
   </div>
 
   <?php else: ?>
-  <!-- Logged in — render cart via JS -->
-  <div id="cartContent">
-    <div style="text-align:center;padding:3rem"><span class="spinner-inline"></span></div>
+  <!-- Logged in -->
+  <div class="cart-layout">
+    <!-- Left: items -->
+    <div>
+      <div id="cartContent">
+        <div style="text-align:center;padding:3rem"><span class="spinner-inline"></span></div>
+      </div>
+    </div>
+
+    <!-- Right: summary -->
+    <div>
+      <div class="cart-summary" id="cartSummaryBox">
+        <div class="summary-title">Tóm tắt đơn hàng</div>
+        <div class="summary-row">
+          <span>Tạm tính</span>
+          <span id="summarySubtotal">—</span>
+        </div>
+        <div class="summary-row">
+          <span>Phí vận chuyển</span>
+          <span>Miễn phí</span>
+        </div>
+        <div class="summary-row total">
+          <span>Tổng cộng</span>
+          <span class="val" id="summaryTotal">—</span>
+        </div>
+        <button class="checkout-btn" id="checkoutBtn" disabled onclick="window.location.href='checkout.php'">
+          Đặt hàng ngay
+        </button>
+        <a href="product.php" class="continue-link">← Tiếp tục mua sắm</a>
+      </div>
+    </div>
   </div>
   <?php endif; ?>
 </div>

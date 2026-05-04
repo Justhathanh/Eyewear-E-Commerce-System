@@ -8,25 +8,16 @@ class OrderController
 
     public function __construct()
     {
-        $db = new Database();
-        $this->db = $db->getConnection();
+        $this->db = (new Database())->getConnection();
     }
 
-    // =========================================================
     // POST /api/orders
-    // Body: { items: [{ productId, quantity }] }
-    // =========================================================
     public function create(): void
     {
         $userId = $this->requireAuth();
         $data   = json_decode(file_get_contents("php://input"), true);
 
-        if (
-            !$data ||
-            !isset($data['items']) ||
-            !is_array($data['items']) ||
-            count($data['items']) === 0
-        ) {
+        if (!$data || !isset($data['items']) || !is_array($data['items']) || count($data['items']) === 0) {
             $this->json(['error' => 'Dữ liệu không hợp lệ.'], 400);
         }
 
@@ -46,33 +37,24 @@ class OrderController
                     "SELECT price, stock FROM products WHERE product_id = :id FOR UPDATE"
                 );
                 $stmt->execute([':id' => $pid]);
-                $product = $stmt->fetch(PDO::FETCH_ASSOC);
+                $product = $stmt->fetch();
 
-                if (!$product) {
-                    throw new \Exception("Sản phẩm #$pid không tồn tại.");
-                }
-
-                if ((int)$product['stock'] < $qty) {
-                    throw new \Exception("Sản phẩm #$pid không đủ hàng (còn {$product['stock']}).");
-                }
+                if (!$product) throw new \Exception("Sản phẩm #$pid không tồn tại.");
+                if ((int)$product['stock'] < $qty) throw new \Exception("Sản phẩm #$pid không đủ hàng (còn {$product['stock']}).");
 
                 $productPrices[$pid] = (float)$product['price'];
                 $total              += (float)$product['price'] * $qty;
             }
 
-            // Tạo order
-            $stmt = $this->db->prepare("
-                INSERT INTO orders (user_id, total_price, status, created_at)
-                VALUES (:userId, :total, 'PENDING', NOW())
-            ");
+            $stmt = $this->db->prepare(
+                "INSERT INTO orders (user_id, total_price, status, created_at) VALUES (:userId, :total, 'PENDING', NOW())"
+            );
             $stmt->execute([':userId' => $userId, ':total' => $total]);
             $orderId = (int)$this->db->lastInsertId();
 
-            // Tạo order_items + trừ stock
-            $itemStmt  = $this->db->prepare("
-                INSERT INTO order_items (order_id, product_id, quantity, price)
-                VALUES (:orderId, :productId, :quantity, :price)
-            ");
+            $itemStmt  = $this->db->prepare(
+                "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (:orderId, :productId, :quantity, :price)"
+            );
             $stockStmt = $this->db->prepare(
                 "UPDATE products SET stock = stock - :qty WHERE product_id = :pid"
             );
@@ -80,21 +62,11 @@ class OrderController
             foreach ($items as $item) {
                 $pid = (int)$item['productId'];
                 $qty = max(1, (int)$item['quantity']);
-
-                $itemStmt->execute([
-                    ':orderId'   => $orderId,
-                    ':productId' => $pid,
-                    ':quantity'  => $qty,
-                    ':price'     => $productPrices[$pid],
-                ]);
-
+                $itemStmt->execute([':orderId' => $orderId, ':productId' => $pid, ':quantity' => $qty, ':price' => $productPrices[$pid]]);
                 $stockStmt->execute([':qty' => $qty, ':pid' => $pid]);
             }
 
-            // Xoá cart sau khi đặt hàng thành công
-            $this->db->prepare("DELETE FROM cart WHERE user_id = :uid")
-                     ->execute([':uid' => $userId]);
-
+            $this->db->prepare("DELETE FROM cart WHERE user_id = :uid")->execute([':uid' => $userId]);
             $this->db->commit();
 
             $this->json(['message' => 'Đặt hàng thành công.', 'orderId' => $orderId], 201);
@@ -105,10 +77,7 @@ class OrderController
         }
     }
 
-    // =========================================================
     // GET /api/orders/history
-    // Query: page, size, status, sort
-    // =========================================================
     public function getHistory(): void
     {
         $userId = $this->requireAuth();
@@ -142,25 +111,26 @@ class OrderController
 
         $sql = "
             SELECT
-                o.order_id   AS orderId,
-                o.user_id    AS userId,
+                o.order_id    AS orderId,
+                o.user_id     AS userId,
                 o.total_price AS total,
                 o.status,
-                o.created_at AS createdAt
+                o.created_at  AS createdAt,
+                p.method      AS paymentMethod,
+                p.status      AS paymentStatus
             FROM orders o
+            LEFT JOIN payments p ON p.order_id = o.order_id
             WHERE $where
             ORDER BY $orderBy
             LIMIT :limit OFFSET :offset
         ";
 
         $stmt = $this->db->prepare($sql);
-        foreach ($params as $k => $v) {
-            $stmt->bindValue($k, $v);
-        }
+        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
         $stmt->bindValue(':limit',  $size,   PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
-        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $orders = $stmt->fetchAll();
 
         $orderIds = array_column($orders, 'orderId');
         $itemsMap = $this->fetchItemsByOrderIds($orderIds);
@@ -179,9 +149,7 @@ class OrderController
         ]);
     }
 
-    // =========================================================
     // GET /api/orders/{orderId}
-    // =========================================================
     public function getDetail(string $orderId): void
     {
         $userId = $this->requireAuth();
@@ -190,9 +158,7 @@ class OrderController
         $this->json($order);
     }
 
-    // =========================================================
     // PUT /api/orders/{orderId}/cancel
-    // =========================================================
     public function cancelOrder(string $orderId): void
     {
         $userId = $this->requireAuth();
@@ -202,12 +168,10 @@ class OrderController
             $this->json(['error' => 'Chỉ có thể huỷ đơn đang chờ hoặc đã xác nhận.'], 422);
         }
 
-        // Hoàn lại stock
         $items = $this->fetchItemsByOrderIds([$order['orderId']])[$order['orderId']] ?? [];
         foreach ($items as $item) {
-            $this->db->prepare(
-                "UPDATE products SET stock = stock + :qty WHERE product_id = :pid"
-            )->execute([':qty' => $item['quantity'], ':pid' => $item['productId']]);
+            $this->db->prepare("UPDATE products SET stock = stock + :qty WHERE product_id = :pid")
+                     ->execute([':qty' => $item['quantity'], ':pid' => $item['productId']]);
         }
 
         $this->db->prepare("UPDATE orders SET status = 'CANCELLED' WHERE order_id = :id")
@@ -216,18 +180,14 @@ class OrderController
         $this->json(['message' => 'Đơn hàng đã được huỷ thành công.']);
     }
 
-    // =========================================================
     // POST /api/orders/{orderId}/reorder
-    // =========================================================
     public function reorder(string $orderId): void
     {
         $userId = $this->requireAuth();
         $order  = $this->findOrderOrFail($userId, (int)$orderId);
         $items  = $this->fetchItemsByOrderIds([$order['orderId']])[$order['orderId']] ?? [];
 
-        if (empty($items)) {
-            $this->json(['error' => 'Không tìm thấy sản phẩm trong đơn hàng.'], 404);
-        }
+        if (empty($items)) $this->json(['error' => 'Không tìm thấy sản phẩm trong đơn hàng.'], 404);
 
         $insertStmt = $this->db->prepare("
             INSERT INTO cart (user_id, product_id, quantity)
@@ -236,19 +196,14 @@ class OrderController
         ");
 
         foreach ($items as $item) {
-            $insertStmt->execute([
-                ':userId'    => $userId,
-                ':productId' => $item['productId'],
-                ':qty'       => $item['quantity'],
-            ]);
+            $insertStmt->execute([':userId' => $userId, ':productId' => $item['productId'], ':qty' => $item['quantity']]);
         }
 
         $this->json(['message' => 'Đã thêm sản phẩm vào giỏ hàng.']);
     }
 
-    // =========================================================
-    // Helpers
-    // =========================================================
+    // ── Helpers ───────────────────────────────────────────────
+
     private function fetchItemsByOrderIds(array $orderIds): array
     {
         if (empty($orderIds)) return [];
@@ -259,6 +214,7 @@ class OrderController
                 oi.order_id   AS orderId,
                 oi.product_id AS productId,
                 p.name,
+                p.image,
                 oi.quantity,
                 oi.price
             FROM order_items oi
@@ -269,7 +225,7 @@ class OrderController
         $stmt->execute(array_values($orderIds));
 
         $map = [];
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        foreach ($stmt->fetchAll() as $row) {
             $oid = $row['orderId'];
             unset($row['orderId']);
             $row['price']    = (float)$row['price'];
@@ -282,29 +238,25 @@ class OrderController
     private function findOrderOrFail(int $userId, int $orderId): array
     {
         $stmt = $this->db->prepare("
-            SELECT order_id AS orderId, user_id AS userId,
-                   total_price AS total, status, created_at AS createdAt
-            FROM orders
-            WHERE order_id = :orderId AND user_id = :userId
+            SELECT o.order_id AS orderId, o.user_id AS userId,
+                   o.total_price AS total, o.status, o.created_at AS createdAt,
+                   p.method AS paymentMethod, p.status AS paymentStatus
+            FROM orders o
+            LEFT JOIN payments p ON p.order_id = o.order_id
+            WHERE o.order_id = :orderId AND o.user_id = :userId
             LIMIT 1
         ");
         $stmt->execute([':orderId' => $orderId, ':userId' => $userId]);
-        $order = $stmt->fetch(PDO::FETCH_ASSOC);
+        $order = $stmt->fetch();
 
-        if (!$order) {
-            $this->json(['error' => 'Đơn hàng không tồn tại.'], 404);
-        }
+        if (!$order) $this->json(['error' => 'Đơn hàng không tồn tại.'], 404);
         return $order;
     }
 
     private function requireAuth(): int
     {
         if (session_status() === PHP_SESSION_NONE) session_start();
-
-        if (!empty($_SESSION['user_id'])) {
-            return (int)$_SESSION['user_id'];
-        }
-
+        if (!empty($_SESSION['user_id'])) return (int)$_SESSION['user_id'];
         $this->json(['error' => 'Bạn cần đăng nhập.'], 401);
     }
 

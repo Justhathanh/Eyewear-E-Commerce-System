@@ -21,16 +21,12 @@ $pageTitle  = isset($validCats[$category]) ? $validCats[$category] : 'Tất cả
       background: var(--ink); color: var(--cream);
       padding: 3rem 3rem 2rem; text-align: center;
     }
-    .page-hero h1 {
-      font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 300;
-    }
-    .page-hero p { font-size: .85rem; color: rgba(245,240,232,.5); margin-top: .5rem; }
+    .page-hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 300; }
+    .page-hero p  { font-size: .85rem; color: rgba(245,240,232,.5); margin-top: .5rem; }
 
     .product-page { padding: 3rem; }
 
-    .cat-filter {
-      display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 2rem; align-items: center;
-    }
+    .cat-filter { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 2rem; align-items: center; }
     .cat-filter a {
       font-size: .72rem; letter-spacing: .08em; text-transform: uppercase;
       padding: .45rem 1.1rem; border: .5px solid var(--border);
@@ -41,12 +37,8 @@ $pageTitle  = isset($validCats[$category]) ? $validCats[$category] : 'Tất cả
     }
 
     .prod-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
-
     @media (max-width: 1024px) { .prod-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 600px)  {
-      .prod-grid { grid-template-columns: 1fr; }
-      .product-page { padding: 1.5rem; }
-    }
+    @media (max-width: 600px)  { .prod-grid { grid-template-columns: 1fr; } .product-page { padding: 1.5rem; } }
 
     .loading-msg { color: var(--muted); font-size: .85rem; }
   </style>
@@ -57,8 +49,8 @@ $pageTitle  = isset($validCats[$category]) ? $validCats[$category] : 'Tất cả
 <nav id="navbar">
   <div class="nav-logo" onclick="window.location='home.php'">VISTA<span>.</span>OPTIC</div>
   <ul class="nav-links">
-    <li><a href="product.php" class="<?= !$category ? 'active':'' ?>">Kính mắt</a></li>
-    <li><a href="product.php?category=sunglasses" class="<?= $category==='sunglasses'?'active':'' ?>">Kính râm</a></li>
+    <li><a href="Product.php" class="<?= !$category ? 'active':'' ?>">Kính mắt</a></li>
+    <li><a href="Product.php?category=sunglasses" class="<?= $category==='sunglasses'?'active':'' ?>">Kính râm</a></li>
     <li><a href="#">Đo mắt</a></li>
     <li><a href="#">Thương hiệu</a></li>
     <li><a href="#">Sale</a></li>
@@ -94,23 +86,19 @@ $pageTitle  = isset($validCats[$category]) ? $validCats[$category] : 'Tất cả
 
 <!-- PRODUCTS -->
 <div class="product-page">
-
-  <!-- Category filter tabs -->
   <div class="cat-filter">
-    <a href="product.php" class="<?= !$category ? 'active' : '' ?>">Tất cả</a>
-    <a href="product.php?category=regular"       class="<?= $category==='regular'       ? 'active':'' ?>">Kính mắt thường</a>
-    <a href="product.php?category=sunglasses"    class="<?= $category==='sunglasses'    ? 'active':'' ?>">Kính râm</a>
-    <a href="product.php?category=prescription"  class="<?= $category==='prescription'  ? 'active':'' ?>">Kính theo đơn</a>
+    <a href="Product.php" class="<?= !$category ? 'active' : '' ?>">Tất cả</a>
+    <a href="Product.php?category=regular"      class="<?= $category==='regular'      ? 'active':'' ?>">Kính mắt thường</a>
+    <a href="Product.php?category=sunglasses"   class="<?= $category==='sunglasses'   ? 'active':'' ?>">Kính râm</a>
+    <a href="Product.php?category=prescription" class="<?= $category==='prescription' ? 'active':'' ?>">Kính theo đơn</a>
   </div>
 
-  <!-- Filter + sort bar -->
   <div class="filter-bar" style="margin-bottom:2rem">
     <button class="filter-btn active" data-filter="all">Tất cả</button>
     <button class="filter-btn" data-filter="available">Có sẵn</button>
     <button class="filter-btn" data-filter="preorder">Pre-order</button>
   </div>
 
-  <!-- Grid -->
   <div class="prod-grid" id="prodGrid">
     <p class="loading-msg">Đang tải sản phẩm…</p>
   </div>
@@ -130,7 +118,7 @@ $pageTitle  = isset($validCats[$category]) ? $validCats[$category] : 'Tất cả
       </form>
       <p class="modal-switch">Chưa có tài khoản? <span onclick="switchModal('signup')">Đăng ký</span></p>
     </div>
-        <div class="modal-form" id="formSignup" style="display:none">
+    <div class="modal-form" id="formSignup" style="display:none">
       <h2>Tạo tài khoản</h2>
       <form action="sign_up.php" method="POST">
         <input type="text"  name="name"     placeholder="Họ tên" required />
@@ -144,25 +132,23 @@ $pageTitle  = isset($validCats[$category]) ? $validCats[$category] : 'Tất cả
 </div>
 <?php endif; ?>
 
-<div id="toast" class="toast">Đã thêm vào giỏ hàng!</div>
+<div id="toast" class="toast"></div>
 
-<script src="../assets/js/api.js"></script>
+<!-- cart.js PHẢI load trước api.js để override addToCart placeholder -->
 <script src="../assets/js/main.js"></script>
+<script src="../assets/js/cart.js"></script>
+<script src="../assets/js/api.js"></script>
 <script>
-// Truyền category từ PHP sang JS để load đúng sản phẩm
 (async function () {
   const grid     = document.getElementById('prodGrid');
   const category = <?= json_encode($category) ?>;
-
   try {
-    const json = await fetchProducts(category);
+    const json     = await fetchProducts(category);
     const products = json.data || [];
-
     if (!products.length) {
       grid.innerHTML = '<p style="color:var(--muted)">Không có sản phẩm nào.</p>';
       return;
     }
-
     grid.innerHTML = products.map(renderProductCard).join('');
     initFadeObserver();
   } catch (e) {
