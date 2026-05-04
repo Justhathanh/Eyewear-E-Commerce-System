@@ -73,13 +73,13 @@ CREATE TABLE IF NOT EXISTS payments (
 -- =============================================
 
 INSERT INTO products (name, description, price, stock, image, category) VALUES
-('Rayban Aviator Classic',   'Gọng kim loại vàng, tròng gradient xanh. Biểu tượng thời trang vượt thời gian.',         1500000, 10, NULL, 'regular'),
-('Rayban Clubmaster',        'Gọng acetate đen, viền kim loại. Phong cách retro hiện đại.',                             1800000,  8, NULL, 'regular'),
-('Oakley Frogskins',         'Gọng nhựa nhẹ, nhiều màu sắc trẻ trung. Thích hợp hoạt động ngoài trời.',                1200000, 15, NULL, 'sunglasses'),
-('Gucci Square Frame',       'Gọng acetate đen vuông, logo GG nổi bật. Sang trọng và cá tính.',                         6500000,  5, NULL, 'regular'),
-('Persol Round Tortoise',    'Gọng acetate tortoise tròn cổ điển. Thương hiệu Italy cao cấp.',                          5100000,  6, NULL, 'sunglasses'),
-('Gentle Monster Rosy',      'Thiết kế Hàn Quốc avant-garde. Độc đáo và nổi bật.',                                     3000000,  7, NULL, 'sunglasses'),
-('Tom Ford FT0237',          'Gọng vàng rose sang trọng, tròng gradient. Dành cho quý cô hiện đại.',                   4500000,  4, NULL, 'regular'),
-('Warby Parker Haskell',     'Gọng acetate tortoise nhẹ, phù hợp mặt oval. Thiết kế Mỹ tối giản.',                      950000, 20, NULL, 'regular'),
+('Rayban Aviator Classic',   'Gọng kim loại vàng, tròng gradient xanh. Biểu tượng thời trang vượt thời gian.',         1500000, 10, '/assets/images/RayA.jpg', 'regular'),
+('Rayban Clubmaster',        'Gọng acetate đen, viền kim loại. Phong cách retro hiện đại.',                             1800000,  8, '/assets/images/RayC.jpg', 'regular'),
+('Oakley Frogskins',         'Gọng nhựa nhẹ, nhiều màu sắc trẻ trung. Thích hợp hoạt động ngoài trời.',                1200000, 15, '/assets/images/Oakley.jpg', 'sunglasses'),
+('Gucci Square Frame',       'Gọng acetate đen vuông, logo GG nổi bật. Sang trọng và cá tính.',                         6500000,  5, '/assets/images/gucci.jpg', 'regular'),
+('Persol Round Tortoise',    'Gọng acetate tortoise tròn cổ điển. Thương hiệu Italy cao cấp.',                          5100000,  6, '/assets/images/Persol.webp', 'sunglasses'),
+('Gentle Monster Rosy',      'Thiết kế Hàn Quốc avant-garde. Độc đáo và nổi bật.',                                     3000000,  7, '/assets/images/gentleMonster.jpg', 'sunglasses'),
+('Tom Ford FT0237',          'Gọng vàng rose sang trọng, tròng gradient. Dành cho quý cô hiện đại.',                   4500000,  4, '/assets/images/Tom.jpg', 'regular'),
+('Warby Parker Haskell',     'Gọng acetate tortoise nhẹ, phù hợp mặt oval. Thiết kế Mỹ tối giản.',                      950000, 20, '/assets/images/Warby.jpg', 'regular'),
 ('Kính theo đơn Basic',      'Gọng titan siêu nhẹ, phù hợp lắp tròng cận/viễn/loạn theo đơn bác sĩ.',                  800000, 50, NULL, 'prescription'),
 ('Kính theo đơn Premium',    'Gọng acetate Italy cao cấp, lắp tròng đa tầng, chống ánh sáng xanh.',                    2200000, 30, NULL, 'prescription');

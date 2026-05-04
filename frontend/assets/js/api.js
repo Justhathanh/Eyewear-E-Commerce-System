@@ -36,16 +36,17 @@ function renderProductCard(p) {
   const type = p.stock > 0 ? 'available' : 'preorder';
   const tagClass = type === 'preorder' ? 'prod-tag pre' : 'prod-tag';
   const tagLabel = type === 'preorder' ? 'Pre-order' : 'Có sẵn';
-  const price = parseInt(p.price).toLocaleString('vi-VN') + ' ₫';
+  const price = Number(p.price).toLocaleString('vi-VN') + ' ₫';
 
   return `
     <div class="prod-card" data-type="${type}" data-id="${p.product_id}">
-@@ -57,26 +58,26 @@ function renderProductCard(p) {
-        </button>
-      </div>
-    </div>`;
+      <img src="${p.image}" alt="${p.name}">
+      <h3>${p.name}</h3>
+      <p>${price}</p>
+      <span class="${tagClass}">${tagLabel}</span>
+    </div>
+  `;
 }
-
 // ── Load products vào #prodGrid (home.php) ───────────────────
 async function loadHomeProducts() {
   const grid = document.getElementById('prodGrid');
