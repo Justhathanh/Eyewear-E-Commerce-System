@@ -239,5 +239,8 @@ $userName = $_SESSION['name'] ?? 'Khách';
 
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/order-history.js"></script>
+<script>
+  window.USER_ID = <?= (int)$_SESSION['user_id'] ?>;
+</script>
 </body>
 </html>

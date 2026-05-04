@@ -8,103 +8,67 @@ class AuthController
 
     public function __construct()
     {
-        $db = new Database();
-        $this->db = $db->getConnection();
+        $this->db = (new Database())->getConnection();
     }
 
-    // =========================================================
-    // POST /api/auth/register
-    // Body: { name, email, password }
-    // =========================================================
     public function register(): void
     {
-        $data = json_decode(file_get_contents("php://input"), true);
-
+        $data     = json_decode(file_get_contents("php://input"), true);
         $name     = trim($data['name']     ?? '');
         $email    = trim($data['email']    ?? '');
         $password =      $data['password'] ?? '';
 
-        if (!$name || !$email || !$password) {
+        if (!$name || !$email || !$password)
             $this->json(['error' => 'Vui lòng điền đầy đủ thông tin.'], 400);
-        }
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL))
             $this->json(['error' => 'Email không hợp lệ.'], 400);
-        }
-
-        if (strlen($password) < 6) {
+        if (strlen($password) < 6)
             $this->json(['error' => 'Mật khẩu phải có ít nhất 6 ký tự.'], 400);
-        }
 
-        // Kiểm tra email đã tồn tại
         $check = $this->db->prepare("SELECT user_id FROM users WHERE email = ? LIMIT 1");
         $check->execute([$email]);
-        if ($check->fetch()) {
-            $this->json(['error' => 'Email đã được sử dụng.'], 409);
-        }
+        if ($check->fetch()) $this->json(['error' => 'Email đã được sử dụng.'], 409);
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $this->db->prepare(
-            "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'CUSTOMER')"
-        );
+        $stmt = $this->db->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'CUSTOMER')");
         $stmt->execute([$name, $email, $hash]);
-
         $userId = (int)$this->db->lastInsertId();
 
-        // Tự động đăng nhập sau đăng ký
         $this->startSession();
         $_SESSION['user_id'] = $userId;
         $_SESSION['name']    = $name;
         $_SESSION['role']    = 'CUSTOMER';
 
-        $this->json([
-            'message' => 'Đăng ký thành công.',
-            'user'    => ['id' => $userId, 'name' => $name, 'email' => $email, 'role' => 'CUSTOMER'],
-        ], 201);
+        $this->json(['message' => 'Đăng ký thành công.',
+            'user' => ['id' => $userId, 'name' => $name, 'email' => $email, 'role' => 'CUSTOMER']], 201);
     }
 
-    // =========================================================
-    // POST /api/auth/login
-    // Body: { email, password }
-    // =========================================================
     public function login(): void
     {
-        $data = json_decode(file_get_contents("php://input"), true);
-
+        $data     = json_decode(file_get_contents("php://input"), true);
         $email    = trim($data['email']    ?? '');
         $password =      $data['password'] ?? '';
 
-        if (!$email || !$password) {
+        if (!$email || !$password)
             $this->json(['error' => 'Vui lòng nhập email và mật khẩu.'], 400);
-        }
 
         $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
         $stmt->execute([$email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch();
 
-        if (!$user || !password_verify($password, $user['password'])) {
+        if (!$user || !password_verify($password, $user['password']))
             $this->json(['error' => 'Email hoặc mật khẩu không đúng.'], 401);
-        }
 
         $this->startSession();
         $_SESSION['user_id'] = (int)$user['user_id'];
         $_SESSION['name']    = $user['name'];
         $_SESSION['role']    = $user['role'];
 
-        $this->json([
-            'message' => 'Đăng nhập thành công.',
-            'user'    => [
-                'id'    => (int)$user['user_id'],
-                'name'  => $user['name'],
-                'email' => $user['email'],
-                'role'  => $user['role'],
-            ],
-        ]);
+        $this->json(['message' => 'Đăng nhập thành công.',
+            'user' => ['id' => (int)$user['user_id'], 'name' => $user['name'],
+                       'email' => $user['email'], 'role' => $user['role']]]);
     }
 
-    // =========================================================
-    // POST /api/auth/logout
-    // =========================================================
     public function logout(): void
     {
         $this->startSession();
@@ -112,37 +76,36 @@ class AuthController
         $this->json(['message' => 'Đã đăng xuất.']);
     }
 
-    // =========================================================
-    // GET /api/auth/me  — trả về thông tin user đang đăng nhập
-    // =========================================================
     public function me(): void
     {
         $this->startSession();
-
-        if (empty($_SESSION['user_id'])) {
+        if (empty($_SESSION['user_id']))
             $this->json(['error' => 'Chưa đăng nhập.'], 401);
-        }
 
         $stmt = $this->db->prepare(
             "SELECT user_id AS id, name, email, role, created_at FROM users WHERE user_id = ? LIMIT 1"
         );
         $stmt->execute([$_SESSION['user_id']]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch();
 
-        if (!$user) {
-            session_destroy();
-            $this->json(['error' => 'Tài khoản không tồn tại.'], 404);
-        }
-
+        if (!$user) { session_destroy(); $this->json(['error' => 'Tài khoản không tồn tại.'], 404); }
         $this->json(['user' => $user]);
     }
 
-    // =========================================================
-    // Helpers
-    // =========================================================
+    // ── Fix: set cookie path = '/' ────────────────────────────
     private function startSession(): void
     {
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_set_cookie_params([
+                'lifetime' => 0,
+                'path'     => '/',
+                'domain'   => '',
+                'secure'   => false,
+                'httponly'  => true,
+                'samesite' => 'Lax',
+            ]);
+            session_start();
+        }
     }
 
     private function json(mixed $data, int $status = 200): never

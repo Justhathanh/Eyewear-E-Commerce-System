@@ -1,4 +1,6 @@
 // frontend/assets/js/order-history.js
+alert('JS loaded');
+console.log('Order history JS loaded');
 
 const API_BASE  = 'http://localhost:9090/api';
 const PAGE_SIZE = 5;
@@ -17,55 +19,96 @@ let state = {
 
 async function fetchOrdersFromAPI(page = 0) {
   const { status, sort } = state.filters;
-  const params = new URLSearchParams({ page, size: PAGE_SIZE, sort });
+const params = new URLSearchParams({
+  page,
+  size: PAGE_SIZE,
+  sort,
+  userId: window.USER_ID
+});
   if (status) params.set('status', status);
 
-  const res = await fetch(`${API_BASE}/orders/history?${params}`, { credentials: 'include' });
+  console.log('Fetching orders from:', `${API_BASE}/orders/history?${params}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-  if (res.status === 401) throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
-  if (!res.ok)            throw new Error(`Lỗi máy chủ (${res.status}). Vui lòng thử lại.`);
+  try {
+    const res = await fetch(`${API_BASE}/orders/history?${params}`, { 
+      credentials: 'include',
+      signal: controller.signal
+    });
 
-  return res.json();
+    clearTimeout(timeoutId);
+    console.log('Response status:', res.status);
+    if (res.status === 401) throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
+    if (!res.ok)            throw new Error(`Lỗi máy chủ (${res.status}). Vui lòng thử lại.`);
+
+    const data = await res.json();
+    console.log('Response data:', data);
+    return data;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Yêu cầu bị timeout. Vui lòng thử lại.');
+    }
+    throw err;
+  }
 }
 
 // ── Load ──────────────────────────────────────────────────────
 
+// ── Load ──────────────────────────────────────────────────────
+
 async function loadOrders(page = 1) {
+  console.log('loadOrders called with page:', page);
   state.loading = true;
-  state.error   = null;
+  state.error = null;
   renderContainer();
 
+  // Bảo vệ timeout (12 giây)
+  const timeoutId = setTimeout(() => {
+    if (state.loading) {
+      state.loading = false;
+      state.error = "Yêu cầu tải quá lâu. Vui lòng kiểm tra kết nối và thử lại.";
+      renderContainer();
+      console.warn("⏰ LoadOrders bị timeout");
+    }
+  }, 12000);
+
   try {
+    console.log(`📡 Đang tải trang ${page}...`);
     const data = await fetchOrdersFromAPI(page - 1);
 
-    state.allOrders   = data.content ?? [];
-    state.totalPages  = data.totalPages ?? 1;
+    state.allOrders = data.content ?? [];
+    state.totalPages = data.totalPages ?? 1;
     state.currentPage = page;
 
     applySearchFilter();
     renderStats();
+  } catch (err) {
+    console.error("❌ LoadOrders Error:", err);
+    state.error = err.message || "Không thể tải dữ liệu. Vui lòng thử lại sau.";
+  } finally {
+    clearTimeout(timeoutId);
+    state.loading = false;
     renderContainer();
     renderPagination();
-  } catch (err) {
-    state.error = err.message;
-    renderContainer();
   }
-
-  state.loading = false;
 }
-
-// ── Client-side search ────────────────────────────────────────
-
 function applySearchFilter() {
-  const q = state.filters.search.toLowerCase();
-  if (!q) { state.orders = [...state.allOrders]; return; }
+  const q = (state.filters.search || '').toLowerCase();
+
+  if (!q) {
+    state.orders = [...state.allOrders];
+    return;
+  }
 
   state.orders = state.allOrders.filter(o =>
     String(o.orderId).toLowerCase().includes(q) ||
-    (o.items || []).some(i => i.name.toLowerCase().includes(q))
+    (o.items || []).some(i =>
+      (i.name || '').toLowerCase().includes(q)
+    )
   );
 }
-
 // ── Render ────────────────────────────────────────────────────
 
 function renderStats() {
@@ -320,4 +363,10 @@ function escHtml(str) {
 }
 
 // ── Init ──────────────────────────────────────────────────────
+
+console.log('USER_ID:', window.USER_ID);
+if (!window.USER_ID) {
+  console.error('❌ USER_ID chưa được set!');
+}
+
 loadOrders(1);
